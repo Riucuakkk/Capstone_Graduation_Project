@@ -1,0 +1,11 @@
+
+pandas
+psycopg2-binary
+sqlalchemy
+apache-airflow
+dbt-postgres
+scikit-learn
+streamlit
+fastapi
+uvicorn
+joblib
