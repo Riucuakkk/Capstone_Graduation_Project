@@ -4,8 +4,8 @@ ecommerce_de_project:
     dev:
       type: postgres
       host: localhost
-      user: admin@admin.com
-      password: admin
+      user: airflow
+      password: airflow
       port: 5432
       dbname: ecommerce
       schema: staging
