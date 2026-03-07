@@ -77,5 +77,4 @@
             )
 
     END
-{%- endif -%}
 {% endmacro %}
