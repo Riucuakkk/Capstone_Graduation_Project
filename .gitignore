@@ -1,4 +1,5 @@
 .agent
+skills-lock.json
 .env
 __pycache__/
 *.pyc
@@ -9,3 +10,4 @@ venv/
 Thumbs.db
 *.log
 data/
+crawl_data.py
