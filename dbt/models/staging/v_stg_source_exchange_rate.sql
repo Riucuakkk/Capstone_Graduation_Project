@@ -5,8 +5,10 @@
 {% set source_name = 'source' %}
 {% set source_table = 'exchange_rate' %}
 {% set source_date_col = 'date' %}
+{% set business_key_cols = ['date', 'currency'] %}
 
 SELECT
+    {{ hash_column(business_key_cols, source_name) }} as hashkey,
     date,
     currency,
     rate,

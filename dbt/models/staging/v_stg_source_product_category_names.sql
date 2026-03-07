@@ -5,9 +5,11 @@
 {% set source_name = 'source' %}
 {% set source_table = 'product_category_names' %}
 {% set source_date_col = none %}
+{% set business_key_cols = ['product_category_name'] %}
 
 {{ stage(
     source_name=source_name,
     source_table=source_table,
-    source_date_col=source_date_col
+    source_date_col=source_date_col,
+    business_key_cols=business_key_cols
 ) }}

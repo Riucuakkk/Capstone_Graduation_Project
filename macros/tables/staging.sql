@@ -1,8 +1,10 @@
-{% macro stage(source_name, source_table, source_date_col = None) %}
+{% macro stage(source_name, source_table, source_date_col = None, business_key_cols = None) %}
 
 {%- set columns = get_columns(source(source_name, source_table)) -%}
 
 SELECT
+
+{{ hash_column(business_key_cols, source_name) }} as hashkey,
 
 {% for col in columns %}
     src.{{ col }}{% if not loop.last %},{% endif %}
