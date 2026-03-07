@@ -1,2 +1,11 @@
 .agent
 .env
+__pycache__/
+*.pyc
+venv/
+.env/
+.ipynb_checkpoints/
+.DS_Store
+Thumbs.db
+*.log
+data/
