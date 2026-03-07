@@ -11,3 +11,5 @@ Thumbs.db
 *.log
 data/
 crawl_data.py
+target/
+.user.yml
