@@ -7,7 +7,7 @@
 {% set source_date_col = none %}
 {% set business_key_cols = ['product_category_name'] %}
 
-{{ stage(
+{{ staging(
     source_name=source_name,
     source_table=source_table,
     source_date_col=source_date_col,

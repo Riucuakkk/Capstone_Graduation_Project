@@ -3,11 +3,11 @@
 )}}
 
 {% set source_name = 'source' %}
-{% set source_table = 'reviews' %}
-{% set source_date_col = 'review_creation_date' %}
-{% set business_key_cols = ['review_id'] %}
+{% set source_table = 'order_payments' %}
+{% set source_date_col = none %}
+{% set business_key_cols = ['order_id', 'payment_sequential'] %}
 
-{{ stage(
+{{ staging(
     source_name=source_name,
     source_table=source_table,
     source_date_col=source_date_col,

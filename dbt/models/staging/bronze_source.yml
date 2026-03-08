@@ -12,5 +12,5 @@ sources:
       - name: products
       - name: sellers
       - name: geolocation
-      - name: exchange_rate
-      - name: product_category_name
+      - name: exchange_rates
+      - name: product_category_names
