@@ -48,8 +48,8 @@ models:
 # Hooks
 # -------------------------------------------------
 on-run-end:
-  - "{{ log_dbt_results(results) }}"
-  - "{{ log_test_results(results) }}"
+#  - "{{ log_dbt_results(results) }}"
+#  - "{{ log_test_results(results) }}"
 
 # -------------------------------------------------
 # Flags

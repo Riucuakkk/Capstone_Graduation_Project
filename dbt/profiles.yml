@@ -6,7 +6,7 @@ ecommerce_de_project:
       host: localhost
       user: airflow
       password: airflow
-      port: 5432
+      port: 5433
       dbname: ecommerce
-      schema: staging
+      schema: source
       threads: 4
