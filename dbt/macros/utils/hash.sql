@@ -3,9 +3,9 @@
     {%- set len = columns_list | length -%}
     {%- for column in columns_list -%}
         {%- if loop.index != len -%}
-            {%- set column_string = "COALESCE(TRIM(CAST(" ~ column ~ " AS string)), '') || " -%}
+            {%- set column_string = "COALESCE(TRIM(CAST(" ~ column ~ " AS text)), '') || " -%}
         {%- else -%}
-            {%- set column_string = "COALESCE(TRIM(CAST(" ~ column ~ " AS string)), '') " -%}
+            {%- set column_string = "COALESCE(TRIM(CAST(" ~ column ~ " AS text)), '') " -%}
         {%- endif -%}
         {%- do hex_columns.append(column_string) -%}
     {%- endfor -%}
