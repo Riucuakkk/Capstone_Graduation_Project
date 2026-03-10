@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
 
   postgres:
@@ -14,6 +12,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+
   pgadmin:
     image: dpage/pgadmin4
     container_name: pgadmin
@@ -25,17 +24,50 @@ services:
     depends_on:
       - postgres
 
-  ingestion:
-    image: python:3.10
-    container_name: ingestion
-    working_dir: /app
-    volumes:
-      - .:/app
-    command: >
-      bash -c "pip install psycopg2-binary &&
-               python -m src.ingestion.ingest_source"
+
+  airflow-webserver:
+    image: apache/airflow:2.9.1
+    container_name: airflow_webserver
     depends_on:
       - postgres
+    environment:
+      AIRFLOW__CORE__EXECUTOR: SequentialExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres:5432/ecommerce
+      AIRFLOW__CORE__LOAD_EXAMPLES: "False"
+      AIRFLOW__WEBSERVER__SECRET_KEY: ecommerce_secret_2026
+      PYTHONPATH: /opt/airflow
+      _PIP_ADDITIONAL_REQUIREMENTS: dbt-postgres
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+      - ./src:/opt/airflow/src
+      - ./data:/opt/airflow/data/raw
+      - ./dbt:/opt/airflow/dbt
+      - ./sql_init:/opt/airflow/sql_init
+    ports:
+      - "8080:8080"
+    command: webserver
+
+
+  airflow-scheduler:
+    image: apache/airflow:2.9.1
+    container_name: airflow_scheduler
+    depends_on:
+      - postgres
+    environment:
+      AIRFLOW__CORE__EXECUTOR: SequentialExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres:5432/ecommerce
+      AIRFLOW__CORE__LOAD_EXAMPLES: "False"
+      AIRFLOW__WEBSERVER__SECRET_KEY: ecommerce_secret_2026
+      PYTHONPATH: /opt/airflow
+      _PIP_ADDITIONAL_REQUIREMENTS: dbt-postgres
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+      - ./src:/opt/airflow/src
+      - ./data:/opt/airflow/data/raw
+      - ./dbt:/opt/airflow/dbt
+      - ./sql_init:/opt/airflow/sql_init
+    command: scheduler
+
 
 volumes:
   postgres_data:
