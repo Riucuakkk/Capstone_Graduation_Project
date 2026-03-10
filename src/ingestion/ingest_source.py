@@ -1,6 +1,6 @@
 import os
-from .config import DATA_PATH
-from .db import get_connection
+from src.ingestion.config import DATA_PATH
+from src.ingestion.db import get_connection
 
 
 def file_to_table(file_name):

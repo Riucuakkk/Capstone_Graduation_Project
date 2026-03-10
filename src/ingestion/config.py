@@ -6,4 +6,4 @@ DB_CONFIG = {
     "password": "airflow"
 }
 
-DATA_PATH = "data/raw"
+DATA_PATH = "/opt/airflow/data/raw"
