@@ -29,7 +29,7 @@ models:
           - unique
           - not_null
 
-  - name: v_stg_source_product_category_names
+  - name: v_stg_source_product_category_name_translation
     columns:
       - name: hashkey
         tests:

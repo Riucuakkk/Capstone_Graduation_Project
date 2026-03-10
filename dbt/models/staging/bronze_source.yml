@@ -13,4 +13,4 @@ sources:
       - name: sellers
       - name: geolocation
       - name: exchange_rates
-      - name: product_category_names
+      - name: product_category_name_translation

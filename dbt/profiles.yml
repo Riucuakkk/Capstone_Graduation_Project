@@ -3,10 +3,10 @@ ecommerce_de_project:
   outputs:
     dev:
       type: postgres
-      host: localhost
+      host: postgres
       user: airflow
       password: airflow
-      port: 5433
+      port: 5432
       dbname: ecommerce
-      schema: source
+      schema: staging
       threads: 4
