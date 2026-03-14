@@ -5,15 +5,21 @@
 
 SELECT
     {{ hash_column(business_key_cols, source_name) }} as hashkey,
-
     {% for col in columns %}
-    src."{{ col.column }}"{% if not loop.last %},{% endif %}
+        {% if col.data_type | lower in ['varchar','text','character varying','char'] %}
+        case
+            when lower(trim(src."{{ col.column }}")) in ('', 'null', 'none', 'n/a')
+            then null
+            else trim(src."{{ col.column }}")
+        end as "{{ col.column }}"
+        {% else %}
+        src."{{ col.column }}"
+        {% endif %}
+        {% if not loop.last %},{% endif %}
     {% endfor %},
-
     '{{ var("target_date") }}' as source_date,
     current_timestamp as load_timestamp,
     '{{ source_name }}' as source_system
-
 FROM {{ src }} as src
 
 {% if source_date_col is not none %}
