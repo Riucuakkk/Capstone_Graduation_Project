@@ -1,0 +1,13 @@
+version: 2
+
+models:
+  - name: as_of_date
+    columns:
+      - name: as_of_date_key
+        tests:
+          - unique
+          - not_null
+      - name: as_of_date
+        tests:
+          - unique
+          - not_null
