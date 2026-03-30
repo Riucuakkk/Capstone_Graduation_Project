@@ -40,7 +40,7 @@ services:
     volumes:
       - ./airflow/dags:/opt/airflow/dags
       - ./src:/opt/airflow/src
-      - ./data:/opt/airflow/data/raw
+      - ./data/raw:/opt/airflow/data/raw
       - ./dbt:/opt/airflow/dbt
       - ./sql_init:/opt/airflow/sql_init
     ports:
@@ -63,7 +63,7 @@ services:
     volumes:
       - ./airflow/dags:/opt/airflow/dags
       - ./src:/opt/airflow/src
-      - ./data:/opt/airflow/data/raw
+      - ./data/raw:/opt/airflow/data/raw
       - ./dbt:/opt/airflow/dbt
       - ./sql_init:/opt/airflow/sql_init
     command: scheduler
