@@ -17,12 +17,6 @@ clean-targets:
   - "dbt_packages"
 
 # -------------------------------------------------
-# Variables
-# -------------------------------------------------
-vars:
-  target_date: "20240123"
-
-# -------------------------------------------------
 # Model configuration
 # -------------------------------------------------
 models:
@@ -32,17 +26,14 @@ models:
       +materialized: view
       +schema: staging
 
-    raw_vault:
-      +materialized: incremental
-      +schema: raw_vault
+    vault:
+      raw_vault:
+        +materialized: incremental
+        +schema: raw_vault
 
-    business_vault:
-      +materialized: table
-      +schema: business_vault
-
-    marts:
-      +materialized: table
-      +schema: mart
+      business_vault:
+        +materialized: table
+        +schema: business_vault
 
 # -------------------------------------------------
 # Hooks
