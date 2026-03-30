@@ -22,7 +22,7 @@ models:
           - unique
           - not_null
 
-  - name: v_stg_source_payments
+  - name: v_stg_source_order_payments
     columns:
       - name: hashkey
         tests:
@@ -36,7 +36,7 @@ models:
           - unique
           - not_null
 
-  - name: v_stg_source_reviews
+  - name: v_stg_source_order_reviews
     columns:
       - name: hashkey
         tests:
