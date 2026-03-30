@@ -49,13 +49,12 @@ FROM insert_data
 SELECT
     hashkey AS {{ hub_hashkey }},
     {{ hashdiff_name }} AS hashdiff,
-    '{{ var("target_date") }}' AS source_event_date,
+    source_event_date AS source_event_date,
     CURRENT_TIMESTAMP AS load_timestamp,
     CONCAT('{{ source_name }}', '__', '{{ source_table }}') AS record_source
     {% for col in list_cols %},
     {{ col }}
     {% endfor %}
 FROM {{ ref(source_model) }}
-WHERE source_event_date = '{{ var("target_date") }}'
 
 {% endmacro %}
