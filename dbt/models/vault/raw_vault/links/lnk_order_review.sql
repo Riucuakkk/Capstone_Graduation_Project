@@ -1,9 +1,6 @@
 {{ config(
     materialized = 'incremental',
-    incremental_strategy = 'merge',
-    unique_key = ['order_review_hashkey'],
-    skip_matched_step = true,
-    auto_liquid_cluster = true,
+    incremental_strategy = 'append',
     tags = ['source']
 ) }}
 

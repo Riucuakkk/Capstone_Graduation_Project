@@ -1,7 +1,7 @@
 
 CREATE SCHEMA IF NOT EXISTS source;
 
-CREATE TABLE source.customers (
+CREATE TABLE IF NOT EXISTS source.customers (
     customer_id TEXT PRIMARY KEY,
     customer_unique_id TEXT,
     customer_zip_code_prefix INT,
@@ -9,7 +9,7 @@ CREATE TABLE source.customers (
     customer_state TEXT
 );
 
-CREATE TABLE source.orders (
+CREATE TABLE IF NOT EXISTS source.orders (
     order_id TEXT PRIMARY KEY,
     customer_id TEXT,
     order_status TEXT,
@@ -20,7 +20,7 @@ CREATE TABLE source.orders (
     order_estimated_delivery_date TIMESTAMP
 );
 
-CREATE TABLE source.order_items (
+CREATE TABLE IF NOT EXISTS source.order_items (
     order_id TEXT,
     order_item_id INT,
     product_id TEXT,
@@ -30,7 +30,7 @@ CREATE TABLE source.order_items (
     freight_value NUMERIC(10,2)
 );
 
-CREATE TABLE source.order_payments (
+CREATE TABLE IF NOT EXISTS source.order_payments (
     order_id TEXT,
     payment_sequential INT,
     payment_type TEXT,
@@ -38,7 +38,7 @@ CREATE TABLE source.order_payments (
     payment_value NUMERIC(10,2)
 );
 
-CREATE TABLE source.order_reviews (
+CREATE TABLE IF NOT EXISTS source.order_reviews (
     review_id TEXT,
     order_id TEXT,
     review_score INT,
@@ -48,7 +48,7 @@ CREATE TABLE source.order_reviews (
     review_answer_timestamp TIMESTAMP
 );
 
-CREATE TABLE source.products (
+CREATE TABLE IF NOT EXISTS source.products (
     product_id TEXT PRIMARY KEY,
     product_category_name TEXT,
     product_name_length INT,
@@ -60,14 +60,14 @@ CREATE TABLE source.products (
     product_width_cm INT
 );
 
-CREATE TABLE source.sellers (
+CREATE TABLE IF NOT EXISTS source.sellers (
     seller_id TEXT PRIMARY KEY,
     seller_zip_code_prefix INT,
     seller_city TEXT,
     seller_state TEXT
 );
 
-CREATE TABLE source.geolocation (
+CREATE TABLE IF NOT EXISTS source.geolocation (
     geolocation_zip_code_prefix INT,
     geolocation_lat NUMERIC(10,6),
     geolocation_lng NUMERIC(10,6),
@@ -75,12 +75,12 @@ CREATE TABLE source.geolocation (
     geolocation_state TEXT
 );
 
-CREATE TABLE source.product_category_name_translation (
+CREATE TABLE IF NOT EXISTS source.product_category_name_translation (
     product_category_name TEXT,
     product_category_name_english TEXT
 );
 
-CREATE TABLE source.exchange_rates (
+CREATE TABLE IF NOT EXISTS source.exchange_rates (
     data_date DATE,
     currency TEXT,
     rate NUMERIC(10,4)

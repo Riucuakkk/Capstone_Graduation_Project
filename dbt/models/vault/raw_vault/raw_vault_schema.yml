@@ -82,14 +82,16 @@ models:
       - name: order_hashkey
         tests:
           - relationships:
-              to: ref('hub_order')
-              field: order_hashkey
+              arguments:
+                to: ref('hub_order')
+                field: order_hashkey
           - not_null
       - name: customer_hashkey
         tests:
           - relationships:
-              to: ref('hub_customer')
-              field: customer_hashkey
+              arguments:
+                to: ref('hub_customer')
+                field: customer_hashkey
           - not_null
 
   - name: lnk_order_product_seller
@@ -101,20 +103,23 @@ models:
       - name: order_hashkey
         tests:
           - relationships:
-              to: ref('hub_order')
-              field: order_hashkey
+              arguments:
+                to: ref('hub_order')
+                field: order_hashkey
           - not_null
       - name: product_hashkey
         tests:
           - relationships:
-              to: ref('hub_product')
-              field: product_hashkey
+              arguments:
+                to: ref('hub_product')
+                field: product_hashkey
           - not_null
       - name: seller_hashkey
         tests:
           - relationships:
-              to: ref('hub_seller')
-              field: seller_hashkey
+              arguments:
+                to: ref('hub_seller')
+                field: seller_hashkey
           - not_null
 
   - name: lnk_order_payment
@@ -126,8 +131,9 @@ models:
       - name: order_hashkey
         tests:
           - relationships:
-              to: ref('hub_order')
-              field: order_hashkey
+              arguments:
+                to: ref('hub_order')
+                field: order_hashkey
           - not_null
 
   - name: lnk_order_review
@@ -139,12 +145,14 @@ models:
       - name: order_hashkey
         tests:
           - relationships:
-              to: ref('hub_order')
-              field: order_hashkey
+              arguments:
+                to: ref('hub_order')
+                field: order_hashkey
           - not_null
       - name: review_hashkey
         tests:
           - relationships:
-              to: ref('hub_review')
-              field: review_hashkey
+              arguments:
+                to: ref('hub_review')
+                field: review_hashkey
           - not_null  

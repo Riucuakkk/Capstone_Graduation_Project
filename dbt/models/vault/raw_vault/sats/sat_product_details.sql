@@ -2,8 +2,6 @@
     materialized = 'incremental',
     incremental_strategy = 'merge',
     unique_key = ['product_hashkey', 'hashdiff'],
-    skip_matched_step = true,
-    auto_liquid_cluster = true,
     tags = ['source']
 ) }}
 
