@@ -39,19 +39,19 @@ def build_notify_task(task_id: str, subject: str, html_content: str):
 
 
 with DAG(
-    dag_id="raw_vault_pipeline",
+    dag_id="vault_pipeline",
     default_args=default_args,
     schedule_interval="0 2 * * *",
     catchup=False,
-    description="Run raw vault models with hub-link-satellite dependencies",
+    description="Run raw vault and business vault models with dependencies",
 ) as dag:
     start = EmptyOperator(task_id="start")
     end = EmptyOperator(task_id="end")
     notify_success = build_notify_task(
-        task_id="notify_raw_vault_success",
-        subject="[Airflow] raw_vault_pipeline success",
+        task_id="notify_vault_success",
+        subject="[Airflow] vault_pipeline success",
         html_content="""
-        <p>DAG <b>raw_vault_pipeline</b> da chay thanh cong.</p>
+        <p>DAG <b>vault_pipeline</b> da chay thanh cong.</p>
         <p>Thoi gian xu ly: {{ ds }}.</p>
         """,
     )
@@ -93,6 +93,19 @@ with DAG(
     sat_review_details = build_dbt_task("run_sat_review_details", "sat_review_details")
     sat_seller_address = build_dbt_task("run_sat_seller_address", "sat_seller_address")
 
+    pit_order_snapshot = build_dbt_task(
+        "run_pit_order_snapshot", "pit_order_snapshot"
+    )
+    bridge_order_line = build_dbt_task(
+        "run_bridge_order_line", "bridge_order_line"
+    )
+    bridge_order_payment = build_dbt_task(
+        "run_bridge_order_payment", "bridge_order_payment"
+    )
+    bridge_customer_order = build_dbt_task(
+        "run_bridge_customer_order", "bridge_customer_order"
+    )
+
     start >> [hub_customer, hub_order, hub_product, hub_seller, hub_review]
 
     [hub_order, hub_customer] >> lnk_order_customer
@@ -110,18 +123,33 @@ with DAG(
 
     [
         lnk_order_customer,
-        lnk_order_product_seller,
-        lnk_order_payment,
-        lnk_order_review,
         sat_customer_address,
         sat_customer_identity,
-        sat_order_item_details,
-        sat_order_payment_details,
         sat_order_status,
         sat_order_timestamps,
+    ] >> pit_order_snapshot
+
+    [
+        pit_order_snapshot,
+        lnk_order_product_seller,
+        sat_order_item_details,
         sat_product_details,
-        sat_review_details,
         sat_seller_address,
+    ] >> bridge_order_line
+
+    [lnk_order_payment, sat_order_payment_details] >> bridge_order_payment
+
+    [
+        pit_order_snapshot,
+        bridge_order_payment,
+        lnk_order_review,
+        sat_review_details,
+    ] >> bridge_customer_order
+
+    [
+        bridge_order_line,
+        bridge_order_payment,
+        bridge_customer_order,
     ] >> end
 
     end >> notify_success
