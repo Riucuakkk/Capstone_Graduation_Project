@@ -85,5 +85,5 @@ left join latest_product_details pd
     on ops.product_hashkey = pd.product_hashkey
 left join latest_seller_address sa
     on ops.seller_hashkey = sa.seller_hashkey
-left join {{ ref('pit_order_snapshot') }} pit
+left join {{ ref('bridge_order_current_snapshot') }} pit
     on ops.order_hashkey = pit.order_hashkey

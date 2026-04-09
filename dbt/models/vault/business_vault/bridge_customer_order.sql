@@ -48,7 +48,7 @@ select
     avg(rs.avg_review_score) as avg_review_score,
     max(case when rs.has_review_comment then 1 else 0 end) = 1 as has_review_comment_history,
     current_timestamp as bv_load_timestamp
-from {{ ref('pit_order_snapshot') }} pit
+from {{ ref('bridge_order_current_snapshot') }} pit
 left join {{ ref('bridge_order_payment') }} bop
     on pit.order_hashkey = bop.order_hashkey
 left join review_summary rs
