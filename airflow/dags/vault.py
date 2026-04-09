@@ -5,7 +5,7 @@ from airflow import DAG
 from airflow.operators.bash import BashOperator
 from airflow.operators.email import EmailOperator
 from airflow.operators.empty import EmptyOperator
-from airflow.sensors.external_task import ExternalTaskSensor
+from airflow.utils.trigger_rule import TriggerRule
 
 
 default_args = {
@@ -31,38 +31,28 @@ def build_dbt_task(task_id: str, model_name: str) -> BashOperator:
     )
 
 
-def build_notify_task(task_id: str, subject: str, html_content: str):
+def build_notify_task(task_id: str, subject: str, html_content: str, trigger_rule: str):
     if os.getenv("ENABLE_EMAIL_NOTIFICATIONS", "false").lower() == "true":
         return EmailOperator(
             task_id=task_id,
             to="haohopnguyen@gmail.com",
             subject=subject,
             html_content=html_content,
+            trigger_rule=trigger_rule,
         )
 
-    return EmptyOperator(task_id=task_id)
+    return EmptyOperator(task_id=task_id, trigger_rule=trigger_rule)
 
 
 with DAG(
     dag_id="vault_pipeline",
     default_args=default_args,
-    schedule_interval="15 2 * * *",
+    schedule_interval=None,
     catchup=False,
-    description="Run full raw vault and business vault pipeline with dependencies.",
+    description="Run full raw vault and business vault pipeline after staging is completed manually.",
 ) as dag:
     start = EmptyOperator(task_id="start")
     end = EmptyOperator(task_id="end")
-
-    wait_for_staging = ExternalTaskSensor(
-        task_id="wait_for_staging_pipeline",
-        external_dag_id="staging_pipeline",
-        external_task_id="build_as_of_date_table",
-        allowed_states=["success"],
-        failed_states=["failed", "skipped"],
-        poke_interval=60,
-        timeout=60 * 60,
-        mode="poke",
-    )
 
     notify_success = build_notify_task(
         task_id="notify_vault_success",
@@ -71,6 +61,18 @@ with DAG(
         <p>DAG <b>vault_pipeline</b> da chay thanh cong.</p>
         <p>Thoi gian xu ly: {{ ds }}.</p>
         """,
+        trigger_rule=TriggerRule.ALL_SUCCESS,
+    )
+
+    notify_failure = build_notify_task(
+        task_id="notify_vault_failure",
+        subject="[Airflow] vault_pipeline failed",
+        html_content="""
+        <p>DAG <b>vault_pipeline</b> da that bai.</p>
+        <p>Thoi gian xu ly: {{ ds }}.</p>
+        <p>Vui long kiem tra log tren Airflow.</p>
+        """,
+        trigger_rule=TriggerRule.ONE_FAILED,
     )
 
     hub_customer = build_dbt_task("run_hub_customer", "hub_customer")
@@ -127,9 +129,7 @@ with DAG(
     )
     bridge_seller_master = build_dbt_task("run_bridge_seller_master", "bridge_seller_master")
 
-    start >> wait_for_staging
-
-    wait_for_staging >> [hub_customer, hub_order, hub_product, hub_seller, hub_review]
+    start >> [hub_customer, hub_order, hub_product, hub_seller, hub_review]
 
     [hub_order, hub_customer] >> lnk_order_customer
     [hub_order, hub_product, hub_seller] >> lnk_order_product_seller
@@ -150,7 +150,6 @@ with DAG(
         sat_customer_identity,
         sat_order_status,
         sat_order_timestamps,
-        wait_for_staging,
     ] >> pit_order_snapshot
 
     pit_order_snapshot >> bridge_order_current_snapshot
@@ -160,7 +159,7 @@ with DAG(
     [hub_customer, sat_customer_identity] >> bridge_customer_identity
     bridge_customer_identity >> same_as_customer
 
-    [hub_product, sat_product_details, wait_for_staging] >> bridge_product_master
+    [hub_product, sat_product_details] >> bridge_product_master
     bridge_order_current_snapshot >> bridge_order_lifecycle
 
     [
@@ -209,5 +208,40 @@ with DAG(
         bridge_seller_master,
         bridge_service_quality,
     ] >> end
+
+    [
+        hub_customer,
+        hub_order,
+        hub_product,
+        hub_seller,
+        hub_review,
+        lnk_order_customer,
+        lnk_order_product_seller,
+        lnk_order_payment,
+        lnk_order_review,
+        sat_customer_address,
+        sat_customer_identity,
+        sat_order_item_details,
+        sat_order_payment_details,
+        sat_order_status,
+        sat_order_timestamps,
+        sat_product_details,
+        sat_review_details,
+        sat_seller_address,
+        pit_order_snapshot,
+        bridge_order_current_snapshot,
+        bridge_order_payment,
+        bridge_customer_identity,
+        same_as_customer,
+        bridge_product_master,
+        bridge_order_lifecycle,
+        bridge_order_line,
+        bridge_review_order,
+        bridge_order_fulfillment,
+        bridge_service_quality,
+        bridge_customer_order,
+        bridge_customer_profile,
+        bridge_seller_master,
+    ] >> notify_failure
 
     end >> notify_success
