@@ -1,23 +1,25 @@
+import argparse
+import json
 
-import pandas as pd
-from sklearn.model_selection import train_test_split
-from sklearn.ensemble import RandomForestRegressor
-import joblib
-from src.utils.db_connection import get_connection
+from src.ml.service import train_service
 
-def train():
-    conn = get_connection()
-    df = pd.read_sql("SELECT * FROM olist_order_items_dataset", conn)
 
-    X = df[["price", "freight_value"]]
-    y = df["price"]
+def train(task_name: str) -> dict:
+    return train_service(task_name)
 
-    X_train, X_test, y_train, y_test = train_test_split(X, y)
 
-    model = RandomForestRegressor()
-    model.fit(X_train, y_train)
+def main():
+    parser = argparse.ArgumentParser(description="Train a baseline ML model from marts.")
+    parser.add_argument(
+        "--task",
+        default="late_delivery",
+        help="Task name. Examples: late_delivery, low_review, customer_value_tier",
+    )
+    args = parser.parse_args()
 
-    joblib.dump(model, "model.pkl")
+    result = train(args.task)
+    print(json.dumps(result, indent=2))
+
 
 if __name__ == "__main__":
-    train()
+    main()

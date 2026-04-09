@@ -35,6 +35,10 @@ models:
         +materialized: table
         +schema: business_vault
 
+    marts:
+      +materialized: table
+      +schema: marts
+
 # -------------------------------------------------
 # Hooks
 # -------------------------------------------------
