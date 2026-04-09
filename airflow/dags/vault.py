@@ -1,10 +1,11 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 import os
 
 from airflow import DAG
 from airflow.operators.bash import BashOperator
 from airflow.operators.email import EmailOperator
 from airflow.operators.empty import EmptyOperator
+from airflow.sensors.external_task import ExternalTaskSensor
 
 
 default_args = {
@@ -13,14 +14,18 @@ default_args = {
     "email": ["haohopnguyen@gmail.com"],
     "email_on_failure": False,
     "email_on_retry": False,
+    "retries": 1,
+    "retry_delay": timedelta(minutes=5),
 }
+
+DBT_PROJECT_DIR = "/opt/airflow/dbt"
 
 
 def build_dbt_task(task_id: str, model_name: str) -> BashOperator:
     return BashOperator(
         task_id=task_id,
         bash_command=f"""
-        cd /opt/airflow/dbt &&
+        cd {DBT_PROJECT_DIR} &&
         dbt run --select {model_name}
         """,
     )
@@ -41,12 +46,24 @@ def build_notify_task(task_id: str, subject: str, html_content: str):
 with DAG(
     dag_id="vault_pipeline",
     default_args=default_args,
-    schedule_interval="0 2 * * *",
+    schedule_interval="15 2 * * *",
     catchup=False,
-    description="Run raw vault and business vault models with dependencies",
+    description="Run full raw vault and business vault pipeline with dependencies.",
 ) as dag:
     start = EmptyOperator(task_id="start")
     end = EmptyOperator(task_id="end")
+
+    wait_for_staging = ExternalTaskSensor(
+        task_id="wait_for_staging_pipeline",
+        external_dag_id="staging_pipeline",
+        external_task_id="build_as_of_date_table",
+        allowed_states=["success"],
+        failed_states=["failed", "skipped"],
+        poke_interval=60,
+        timeout=60 * 60,
+        mode="poke",
+    )
+
     notify_success = build_notify_task(
         task_id="notify_vault_success",
         subject="[Airflow] vault_pipeline success",
@@ -62,21 +79,15 @@ with DAG(
     hub_seller = build_dbt_task("run_hub_seller", "hub_seller")
     hub_review = build_dbt_task("run_hub_review", "hub_review")
 
-    lnk_order_customer = build_dbt_task(
-        "run_lnk_order_customer", "lnk_order_customer"
-    )
+    lnk_order_customer = build_dbt_task("run_lnk_order_customer", "lnk_order_customer")
     lnk_order_product_seller = build_dbt_task(
         "run_lnk_order_product_seller", "lnk_order_product_seller"
     )
     lnk_order_payment = build_dbt_task("run_lnk_order_payment", "lnk_order_payment")
     lnk_order_review = build_dbt_task("run_lnk_order_review", "lnk_order_review")
 
-    sat_customer_address = build_dbt_task(
-        "run_sat_customer_address", "sat_customer_address"
-    )
-    sat_customer_identity = build_dbt_task(
-        "run_sat_customer_identity", "sat_customer_identity"
-    )
+    sat_customer_address = build_dbt_task("run_sat_customer_address", "sat_customer_address")
+    sat_customer_identity = build_dbt_task("run_sat_customer_identity", "sat_customer_identity")
     sat_order_item_details = build_dbt_task(
         "run_sat_order_item_details", "sat_order_item_details"
     )
@@ -84,29 +95,41 @@ with DAG(
         "run_sat_order_payment_details", "sat_order_payment_details"
     )
     sat_order_status = build_dbt_task("run_sat_order_status", "sat_order_status")
-    sat_order_timestamps = build_dbt_task(
-        "run_sat_order_timestamps", "sat_order_timestamps"
-    )
-    sat_product_details = build_dbt_task(
-        "run_sat_product_details", "sat_product_details"
-    )
+    sat_order_timestamps = build_dbt_task("run_sat_order_timestamps", "sat_order_timestamps")
+    sat_product_details = build_dbt_task("run_sat_product_details", "sat_product_details")
     sat_review_details = build_dbt_task("run_sat_review_details", "sat_review_details")
     sat_seller_address = build_dbt_task("run_sat_seller_address", "sat_seller_address")
 
-    pit_order_snapshot = build_dbt_task(
-        "run_pit_order_snapshot", "pit_order_snapshot"
+    pit_order_snapshot = build_dbt_task("run_pit_order_snapshot", "pit_order_snapshot")
+    bridge_order_current_snapshot = build_dbt_task(
+        "run_bridge_order_current_snapshot", "bridge_order_current_snapshot"
     )
-    bridge_order_line = build_dbt_task(
-        "run_bridge_order_line", "bridge_order_line"
+    bridge_order_payment = build_dbt_task("run_bridge_order_payment", "bridge_order_payment")
+    bridge_customer_identity = build_dbt_task(
+        "run_bridge_customer_identity", "bridge_customer_identity"
     )
-    bridge_order_payment = build_dbt_task(
-        "run_bridge_order_payment", "bridge_order_payment"
+    same_as_customer = build_dbt_task("run_same_as_customer", "same_as_customer")
+    bridge_product_master = build_dbt_task("run_bridge_product_master", "bridge_product_master")
+    bridge_order_lifecycle = build_dbt_task(
+        "run_bridge_order_lifecycle", "bridge_order_lifecycle"
     )
-    bridge_customer_order = build_dbt_task(
-        "run_bridge_customer_order", "bridge_customer_order"
+    bridge_order_line = build_dbt_task("run_bridge_order_line", "bridge_order_line")
+    bridge_review_order = build_dbt_task("run_bridge_review_order", "bridge_review_order")
+    bridge_order_fulfillment = build_dbt_task(
+        "run_bridge_order_fulfillment", "bridge_order_fulfillment"
     )
+    bridge_service_quality = build_dbt_task(
+        "run_bridge_service_quality", "bridge_service_quality"
+    )
+    bridge_customer_order = build_dbt_task("run_bridge_customer_order", "bridge_customer_order")
+    bridge_customer_profile = build_dbt_task(
+        "run_bridge_customer_profile", "bridge_customer_profile"
+    )
+    bridge_seller_master = build_dbt_task("run_bridge_seller_master", "bridge_seller_master")
 
-    start >> [hub_customer, hub_order, hub_product, hub_seller, hub_review]
+    start >> wait_for_staging
+
+    wait_for_staging >> [hub_customer, hub_order, hub_product, hub_seller, hub_review]
 
     [hub_order, hub_customer] >> lnk_order_customer
     [hub_order, hub_product, hub_seller] >> lnk_order_product_seller
@@ -127,29 +150,64 @@ with DAG(
         sat_customer_identity,
         sat_order_status,
         sat_order_timestamps,
+        wait_for_staging,
     ] >> pit_order_snapshot
 
+    pit_order_snapshot >> bridge_order_current_snapshot
+
+    [lnk_order_payment, sat_order_payment_details] >> bridge_order_payment
+
+    [hub_customer, sat_customer_identity] >> bridge_customer_identity
+    bridge_customer_identity >> same_as_customer
+
+    [hub_product, sat_product_details, wait_for_staging] >> bridge_product_master
+    bridge_order_current_snapshot >> bridge_order_lifecycle
+
     [
-        pit_order_snapshot,
+        bridge_order_current_snapshot,
         lnk_order_product_seller,
         sat_order_item_details,
         sat_product_details,
         sat_seller_address,
     ] >> bridge_order_line
 
-    [lnk_order_payment, sat_order_payment_details] >> bridge_order_payment
+    [lnk_order_review, sat_review_details, bridge_order_current_snapshot] >> bridge_review_order
+
+    bridge_order_line >> bridge_order_fulfillment
 
     [
-        pit_order_snapshot,
+        bridge_order_lifecycle,
+        bridge_order_payment,
+        bridge_review_order,
+    ] >> bridge_service_quality
+
+    [
+        bridge_order_current_snapshot,
         bridge_order_payment,
         lnk_order_review,
         sat_review_details,
     ] >> bridge_customer_order
 
     [
-        bridge_order_line,
+        same_as_customer,
+        bridge_customer_identity,
+        bridge_order_current_snapshot,
+        bridge_order_payment,
+        bridge_review_order,
+    ] >> bridge_customer_profile
+
+    [hub_seller, sat_seller_address, bridge_order_line] >> bridge_seller_master
+
+    [
         bridge_order_payment,
         bridge_customer_order,
+        bridge_customer_profile,
+        bridge_order_fulfillment,
+        bridge_order_lifecycle,
+        bridge_product_master,
+        bridge_review_order,
+        bridge_seller_master,
+        bridge_service_quality,
     ] >> end
 
     end >> notify_success
