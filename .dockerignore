@@ -1,0 +1,15 @@
+.git
+.agent
+__pycache__
+*.pyc
+.pytest_cache
+.mypy_cache
+.ruff_cache
+logs
+target
+notebooks
+data
+images
+docs
+airflow.cfg
+webserver_config.py

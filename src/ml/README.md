@@ -23,6 +23,19 @@ Khung nay duoc tao de:
 - `order_value_regression`
 - `daily_category_revenue_regression`
 
+## Cau truc code
+
+Core ML hien duoc gom vao 2 file chinh:
+
+- `tasks.py`: catalog nghiep vu, SQL, target, feature va cau hoi mau cho tung bai toan.
+- `service.py`: doc mart, train model, luu artifact, predict, gan risk band/action va tao summary cho GenAI/API.
+
+Ba file con lai chi la entrypoint CLI mong de chay lenh:
+
+- `list_tasks.py`
+- `train_model.py`
+- `predict.py`
+
 ## Lenh mau
 
 ```bash

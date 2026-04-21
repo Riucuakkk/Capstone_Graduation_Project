@@ -69,5 +69,26 @@ services:
     command: scheduler
 
 
+  streamlit:
+    build:
+      context: .
+      dockerfile: streamlit_app/Dockerfile
+    container_name: streamlit_app
+    depends_on:
+      - postgres
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ecommerce
+      DB_USER: airflow
+      DB_PASSWORD: airflow
+      PYTHONPATH: /app
+    volumes:
+      - ./streamlit_app:/app/streamlit_app
+      - ./src:/app/src
+    ports:
+      - "8501:8501"
+
+
 volumes:
   postgres_data:
