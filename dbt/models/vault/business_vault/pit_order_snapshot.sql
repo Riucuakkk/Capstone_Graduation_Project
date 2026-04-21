@@ -1,16 +1,37 @@
 {{ config(
     materialized='table',
-    tags=['business_vault', 'pit']
+    tags=['business_vault', 'pit'],
+    pre_hook=[
+        "create index if not exists idx_lnk_order_customer_pit on {{ ref('lnk_order_customer') }} (order_hashkey, source_event_date desc, load_timestamp desc)",
+        "create index if not exists idx_sat_customer_identity_pit on {{ ref('sat_customer_identity') }} (customer_hashkey, source_event_date desc, load_timestamp desc)",
+        "create index if not exists idx_sat_customer_address_pit on {{ ref('sat_customer_address') }} (customer_hashkey, source_event_date desc, load_timestamp desc)",
+        "create index if not exists idx_sat_order_status_pit on {{ ref('sat_order_status') }} (order_hashkey, source_event_date desc, load_timestamp desc)",
+        "create index if not exists idx_sat_order_timestamps_pit on {{ ref('sat_order_timestamps') }} (order_hashkey, source_event_date desc, load_timestamp desc)",
+        "create index if not exists idx_hub_customer_pit on {{ ref('hub_customer') }} (customer_hashkey)"
+    ]
 ) }}
 
 with order_date_bounds as (
     select
         ho.order_hashkey,
         ho.business_key as order_id,
-        min(sot.order_purchase_timestamp::date) as first_snapshot_date
+        min(sot.order_purchase_timestamp::date) as first_snapshot_date,
+        max(order_events.event_date) as last_snapshot_date
     from {{ ref('hub_order') }} ho
     left join {{ ref('sat_order_timestamps') }} sot
         on ho.order_hashkey = sot.order_hashkey
+    left join {{ ref('sat_order_status') }} sos
+        on ho.order_hashkey = sos.order_hashkey
+    left join lateral (
+        values
+            (sot.order_purchase_timestamp::date),
+            (sot.order_approved_at::date),
+            (sot.order_delivered_carrier_date::date),
+            (sot.order_delivered_customer_date::date),
+            (sot.order_estimated_delivery_date::date),
+            (to_date(sos.source_event_date, 'YYYYMMDD'))
+    ) as order_events(event_date)
+        on order_events.event_date is not null
     group by
         ho.order_hashkey,
         ho.business_key
@@ -24,6 +45,7 @@ order_calendar as (
     from order_date_bounds odb
     inner join {{ ref('as_of_date') }} aod
         on aod.as_of_date >= odb.first_snapshot_date
+       and aod.as_of_date <= coalesce(odb.last_snapshot_date, odb.first_snapshot_date)
     where odb.first_snapshot_date is not null
 ),
 pit_resolved as (
