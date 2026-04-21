@@ -31,7 +31,8 @@ services:
     depends_on:
       - postgres
     environment:
-      AIRFLOW__CORE__EXECUTOR: SequentialExecutor
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__CORE__MAX_ACTIVE_TASKS_PER_DAG: 1
       AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres:5432/ecommerce
       AIRFLOW__CORE__LOAD_EXAMPLES: "False"
       AIRFLOW__WEBSERVER__SECRET_KEY: ecommerce_secret_2026
@@ -54,7 +55,8 @@ services:
     depends_on:
       - postgres
     environment:
-      AIRFLOW__CORE__EXECUTOR: SequentialExecutor
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__CORE__MAX_ACTIVE_TASKS_PER_DAG: 1
       AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres:5432/ecommerce
       AIRFLOW__CORE__LOAD_EXAMPLES: "False"
       AIRFLOW__WEBSERVER__SECRET_KEY: ecommerce_secret_2026
