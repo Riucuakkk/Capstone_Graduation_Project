@@ -112,6 +112,7 @@ with DAG(
     )
     same_as_customer = build_dbt_task("run_same_as_customer", "same_as_customer")
     bridge_product_master = build_dbt_task("run_bridge_product_master", "bridge_product_master")
+    as_of_date = build_dbt_task("run_as_of_date", "as_of_date")
     bridge_order_lifecycle = build_dbt_task(
         "run_bridge_order_lifecycle", "bridge_order_lifecycle"
     )
@@ -150,6 +151,7 @@ with DAG(
         sat_customer_identity,
         sat_order_status,
         sat_order_timestamps,
+        as_of_date,
     ] >> pit_order_snapshot
 
     pit_order_snapshot >> bridge_order_current_snapshot
@@ -234,6 +236,7 @@ with DAG(
         bridge_customer_identity,
         same_as_customer,
         bridge_product_master,
+        as_of_date,
         bridge_order_lifecycle,
         bridge_order_line,
         bridge_review_order,

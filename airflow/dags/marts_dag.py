@@ -142,11 +142,15 @@ with DAG(
 
     [fact_category_daily, fact_seller_daily, fact_geo_daily] >> fact_demand_series
 
-    [fact_orders, fact_customer_snapshot, fact_seller_daily] >> [
+    prediction_upstream_tasks = [fact_orders, fact_customer_snapshot, fact_seller_daily]
+    prediction_tasks = [
         fact_order_predictions,
         fact_customer_predictions,
         fact_seller_predictions,
     ]
+
+    for upstream_task in prediction_upstream_tasks:
+        upstream_task >> prediction_tasks
 
     [
         fact_payments,

@@ -44,14 +44,6 @@ with DAG(
         """,
     )
 
-    build_as_of_date = BashOperator(
-        task_id="build_as_of_date_table",
-        bash_command="""
-        cd /opt/airflow/dbt &&
-        dbt run --select as_of_date
-        """
-    )
-
     notify_success = build_notify_task(
         task_id="notify_staging_success",
         subject="[Airflow] staging_pipeline success",
@@ -73,7 +65,7 @@ with DAG(
         trigger_rule=TriggerRule.ONE_FAILED,
     )
 
-    start >> dbt_staging >> build_as_of_date >> end
+    start >> dbt_staging >> end
 
-    [dbt_staging, build_as_of_date] >> notify_failure
+    dbt_staging >> notify_failure
     end >> notify_success
