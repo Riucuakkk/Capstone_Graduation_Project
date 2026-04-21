@@ -33,6 +33,7 @@ with DAG(
     default_args=default_args,
     schedule_interval=None,
     catchup=False,
+    max_active_runs=1,
     description="Init DB and ingest source data",
 ) as dag:
     start = EmptyOperator(task_id="start")

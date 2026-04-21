@@ -49,6 +49,7 @@ with DAG(
     default_args=default_args,
     schedule_interval=None,
     catchup=False,
+    max_active_runs=1,
     description="Run marts layer manually after vault_pipeline completes.",
 ) as dag:
     start = EmptyOperator(task_id="start")

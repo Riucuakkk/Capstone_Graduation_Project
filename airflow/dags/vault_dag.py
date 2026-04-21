@@ -50,6 +50,7 @@ with DAG(
     default_args=default_args,
     schedule_interval=None,
     catchup=False,
+    max_active_runs=1,
     description="Run full raw vault and business vault pipeline after staging is completed manually.",
 ) as dag:
     start = EmptyOperator(task_id="start")
