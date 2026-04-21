@@ -5,6 +5,7 @@ from airflow import DAG
 from airflow.operators.bash import BashOperator
 from airflow.operators.email import EmailOperator
 from airflow.operators.empty import EmptyOperator
+from airflow.operators.trigger_dagrun import TriggerDagRunOperator
 from airflow.utils.trigger_rule import TriggerRule
 
 
@@ -73,6 +74,11 @@ with DAG(
         <p>Vui long kiem tra log tren Airflow.</p>
         """,
         trigger_rule=TriggerRule.ONE_FAILED,
+    )
+
+    trigger_mart = TriggerDagRunOperator(
+        task_id="trigger_mart_pipeline",
+        trigger_dag_id="mart_pipeline",
     )
 
     hub_customer = build_dbt_task("run_hub_customer", "hub_customer")
@@ -209,7 +215,7 @@ with DAG(
         bridge_review_order,
         bridge_seller_master,
         bridge_service_quality,
-    ] >> end
+    ] >> end >> trigger_mart
 
     [
         hub_customer,
@@ -245,6 +251,7 @@ with DAG(
         bridge_customer_order,
         bridge_customer_profile,
         bridge_seller_master,
+        trigger_mart,
     ] >> notify_failure
 
-    end >> notify_success
+    trigger_mart >> notify_success

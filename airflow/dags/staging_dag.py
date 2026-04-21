@@ -2,6 +2,7 @@ from airflow import DAG
 from airflow.operators.bash import BashOperator
 from airflow.operators.email import EmailOperator
 from airflow.operators.empty import EmptyOperator
+from airflow.operators.trigger_dagrun import TriggerDagRunOperator
 from airflow.utils.trigger_rule import TriggerRule
 from datetime import datetime
 import os
@@ -44,6 +45,11 @@ with DAG(
         """,
     )
 
+    trigger_vault = TriggerDagRunOperator(
+        task_id="trigger_vault_pipeline",
+        trigger_dag_id="vault_pipeline",
+    )
+
     notify_success = build_notify_task(
         task_id="notify_staging_success",
         subject="[Airflow] staging_pipeline success",
@@ -65,7 +71,7 @@ with DAG(
         trigger_rule=TriggerRule.ONE_FAILED,
     )
 
-    start >> dbt_staging >> end
+    start >> dbt_staging >> end >> trigger_vault
 
-    dbt_staging >> notify_failure
-    end >> notify_success
+    [dbt_staging, trigger_vault] >> notify_failure
+    trigger_vault >> notify_success
