@@ -14,7 +14,7 @@ from streamlit_app.components.charts import bar_chart, donut_chart, line_chart
 from streamlit_app.components.db_connection import database_is_ready, read_sql
 
 
-st.set_page_config(page_title="BI Dashboard", page_icon="📈", layout="wide")
+st.set_page_config(page_title="BI Dashboard", layout="wide")
 
 
 def load_css() -> None:
@@ -91,13 +91,10 @@ order by 1
 """
 category_sql = """
 select
-    coalesce(category_name_english, entity_key) as category,
-    sum(total_revenue)::numeric as revenue,
+    category_key as category,
+    sum(total_gross_amount)::numeric as revenue,
     sum(total_orders)::int as orders
-from marts.fact_demand_series f
-left join marts.dim_product_category d
-    on f.entity_key = d.product_category_key
-where f.entity_type = 'category'
+from marts.fact_category_daily
 group by 1
 order by revenue desc
 limit 12
