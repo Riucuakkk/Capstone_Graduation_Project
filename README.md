@@ -25,7 +25,28 @@ The pipeline demonstrates key Data Engineering concepts, including:
 | Database            | PostgreSQL     |
 | Data Transformation | dbt            |
 | Orchestration       | Apache Airflow |
+| BI Dashboard        | Apache Superset |
 | Containerization    | Docker         |
 | Data Modeling       | Data Vault 2.0 |
 ## Running the Project
 docker compose up -d
+
+Superset runs at:
+
+```text
+http://localhost:8088
+```
+
+Default account:
+
+```text
+admin / admin
+```
+
+Connect Superset to the mart warehouse with:
+
+```text
+postgresql+psycopg2://airflow:airflow@postgres:5432/ecommerce
+```
+
+See `docs/superset_bi_setup.md` for the recommended BI dashboard around the 3 predictive mart use cases.
