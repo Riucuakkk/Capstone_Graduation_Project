@@ -97,18 +97,9 @@ with DAG(
     fact_category_daily = build_dbt_task("run_fact_category_daily", "fact_category_daily")
     fact_geo_daily = build_dbt_task("run_fact_geo_daily", "fact_geo_daily")
 
-    fact_customer_snapshot = build_dbt_task("run_fact_customer_snapshot", "fact_customer_snapshot")
-    fact_order_snapshot_ml = build_dbt_task("run_fact_order_snapshot_ml", "fact_order_snapshot_ml")
-    fact_delivery_line_snapshot = build_dbt_task(
-        "run_fact_delivery_line_snapshot", "fact_delivery_line_snapshot"
-    )
-    fact_demand_series = build_dbt_task("run_fact_demand_series", "fact_demand_series")
-
-    fact_order_predictions = build_dbt_task("run_fact_order_predictions", "fact_order_predictions")
-    fact_customer_predictions = build_dbt_task(
-        "run_fact_customer_predictions", "fact_customer_predictions"
-    )
-    fact_seller_predictions = build_dbt_task("run_fact_seller_predictions", "fact_seller_predictions")
+    fact_ml_product_demand = build_dbt_task("run_fact_ml_product_demand", "fact_ml_product_demand")
+    fact_ml_order_success = build_dbt_task("run_fact_ml_order_success", "fact_ml_order_success")
+    fact_ml_geo_demand = build_dbt_task("run_fact_ml_geo_demand", "fact_ml_geo_demand")
 
     start >> [
         dim_date,
@@ -133,36 +124,24 @@ with DAG(
     [dim_customers] >> fact_reviews
 
     fact_orders >> fact_customer_orders
-    fact_customer_orders >> [fact_customer_monthly, fact_customer_snapshot]
-
-    fact_orders >> fact_order_snapshot_ml
-    fact_order_items >> fact_delivery_line_snapshot
+    fact_customer_orders >> fact_customer_monthly
 
     fact_order_items >> [fact_seller_daily, fact_product_daily, fact_category_daily]
     fact_orders >> fact_geo_daily
 
-    [fact_category_daily, fact_seller_daily, fact_geo_daily] >> fact_demand_series
-
-    prediction_upstream_tasks = [fact_orders, fact_customer_snapshot, fact_seller_daily]
-    prediction_tasks = [
-        fact_order_predictions,
-        fact_customer_predictions,
-        fact_seller_predictions,
-    ]
-
-    for upstream_task in prediction_upstream_tasks:
-        upstream_task >> prediction_tasks
+    fact_product_daily >> fact_ml_product_demand
+    fact_orders >> fact_ml_order_success
+    fact_geo_daily >> fact_ml_geo_demand
 
     [
         fact_payments,
         fact_reviews,
         fact_customer_monthly,
-        fact_order_snapshot_ml,
-        fact_delivery_line_snapshot,
-        fact_demand_series,
-        fact_order_predictions,
-        fact_customer_predictions,
-        fact_seller_predictions,
+        fact_seller_daily,
+        fact_category_daily,
+        fact_ml_product_demand,
+        fact_ml_order_success,
+        fact_ml_geo_demand,
     ] >> end
 
     [
@@ -184,13 +163,9 @@ with DAG(
         fact_product_daily,
         fact_category_daily,
         fact_geo_daily,
-        fact_customer_snapshot,
-        fact_order_snapshot_ml,
-        fact_delivery_line_snapshot,
-        fact_demand_series,
-        fact_order_predictions,
-        fact_customer_predictions,
-        fact_seller_predictions,
+        fact_ml_product_demand,
+        fact_ml_order_success,
+        fact_ml_geo_demand,
     ] >> notify_failure
 
     end >> notify_success
