@@ -100,6 +100,16 @@ with DAG(
     fact_ml_product_demand = build_dbt_task("run_fact_ml_product_demand", "fact_ml_product_demand")
     fact_ml_order_success = build_dbt_task("run_fact_ml_order_success", "fact_ml_order_success")
     fact_ml_geo_demand = build_dbt_task("run_fact_ml_geo_demand", "fact_ml_geo_demand")
+    bi_superset_business_overview = build_dbt_task(
+        "run_bi_superset_business_overview", "bi_superset_business_overview"
+    )
+    bi_superset_product_bestseller = build_dbt_task(
+        "run_bi_superset_product_bestseller", "bi_superset_product_bestseller"
+    )
+    bi_superset_order_success = build_dbt_task(
+        "run_bi_superset_order_success", "bi_superset_order_success"
+    )
+    bi_superset_geo_demand = build_dbt_task("run_bi_superset_geo_demand", "bi_superset_geo_demand")
 
     start >> [
         dim_date,
@@ -133,15 +143,21 @@ with DAG(
     fact_orders >> fact_ml_order_success
     fact_geo_daily >> fact_ml_geo_demand
 
+    [fact_orders, fact_ml_product_demand, fact_ml_geo_demand] >> bi_superset_business_overview
+    fact_ml_product_demand >> bi_superset_product_bestseller
+    fact_ml_order_success >> bi_superset_order_success
+    fact_ml_geo_demand >> bi_superset_geo_demand
+
     [
         fact_payments,
         fact_reviews,
         fact_customer_monthly,
         fact_seller_daily,
         fact_category_daily,
-        fact_ml_product_demand,
-        fact_ml_order_success,
-        fact_ml_geo_demand,
+        bi_superset_business_overview,
+        bi_superset_product_bestseller,
+        bi_superset_order_success,
+        bi_superset_geo_demand,
     ] >> end
 
     [
@@ -166,6 +182,10 @@ with DAG(
         fact_ml_product_demand,
         fact_ml_order_success,
         fact_ml_geo_demand,
+        bi_superset_business_overview,
+        bi_superset_product_bestseller,
+        bi_superset_order_success,
+        bi_superset_geo_demand,
     ] >> notify_failure
 
     end >> notify_success

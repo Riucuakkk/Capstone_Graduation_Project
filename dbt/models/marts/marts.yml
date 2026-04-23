@@ -74,9 +74,59 @@ models:
       - name: order_key
         tests: [unique, not_null]
 
-  - name: fact_customer_snapshot
+  - name: fact_ml_product_demand
     columns:
-      - name: customer_key
+      - name: ml_sample_key
+        tests: [unique, not_null]
+      - name: product_key
         tests: [not_null]
-      - name: snapshot_date_key
+      - name: is_bestseller_next_7d
+        tests: [not_null]
+
+  - name: fact_ml_order_success
+    columns:
+      - name: ml_sample_key
+        tests: [unique, not_null]
+      - name: order_key
+        tests: [not_null]
+      - name: is_successful_order
+        tests: [not_null]
+
+  - name: fact_ml_geo_demand
+    columns:
+      - name: ml_sample_key
+        tests: [unique, not_null]
+      - name: location_key
+        tests: [not_null]
+      - name: is_high_demand_area_next_7d
+        tests: [not_null]
+
+  - name: bi_superset_business_overview
+    description: Daily KPI view for the top section of the Superset dashboard.
+    columns:
+      - name: metric_date_key
+        tests: [unique, not_null]
+
+  - name: bi_superset_product_bestseller
+    description: Superset-ready view for product bestseller prediction visuals.
+    columns:
+      - name: ml_sample_key
+        tests: [unique, not_null]
+      - name: product_key
+        tests: [not_null]
+
+  - name: bi_superset_order_success
+    description: Superset-ready view for order success prediction visuals.
+    columns:
+      - name: ml_sample_key
+        tests: [unique, not_null]
+      - name: order_key
+        tests: [not_null]
+
+  - name: bi_superset_geo_demand
+    description: Superset-ready view for geo demand prediction visuals.
+    columns:
+      - name: ml_sample_key
+        tests: [unique, not_null]
+      - name: location_key
         tests: [not_null]
