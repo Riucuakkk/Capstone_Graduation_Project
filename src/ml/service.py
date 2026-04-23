@@ -83,7 +83,7 @@ def split_features_and_target(df: pd.DataFrame, task: TaskConfig):
         selected_columns.append(task.time_column)
 
     clean_df = df[selected_columns].copy()
-    clean_df = clean_df.dropna(subset=[task.target_column])
+    clean_df = clean_df.dropna(subset=[task.target_column]).reset_index(drop=True)
 
     X = clean_df[feature_columns]
     y = clean_df[task.target_column]
@@ -231,51 +231,31 @@ def _regression_to_band(task: TaskConfig, value: float | int | None) -> str | No
     if value is None:
         return None
     numeric_value = float(value)
-    if task.name == "delivery_days_regression":
-        if numeric_value >= 15:
-            return "high"
-        if numeric_value >= 7:
-            return "medium"
-        return "low"
-    if task.name == "order_value_regression":
-        if numeric_value >= 500:
-            return "high"
-        if numeric_value >= 150:
-            return "medium"
-        return "low"
-    if task.name == "daily_category_revenue_regression":
-        if numeric_value >= 10000:
-            return "high"
-        if numeric_value >= 3000:
-            return "medium"
-        return "low"
-    return None
+    if numeric_value >= 0.8:
+        return "high"
+    if numeric_value >= 0.55:
+        return "medium"
+    return "low"
 
 
 def recommend_action(task: TaskConfig, risk_band: str | None) -> str:
-    if task.name == "late_delivery":
+    if task.name == "product_bestseller":
         actions = {
-            "high": "Escalate shipment monitoring and alert the operations team.",
-            "medium": "Review seller SLA and track this order more closely.",
-            "low": "No action needed beyond normal monitoring.",
+            "high": "Prioritize inventory, promotion budget, and seller readiness for this product.",
+            "medium": "Monitor demand trend and prepare limited campaign support.",
+            "low": "Keep standard assortment monitoring.",
         }
-    elif task.name == "low_review":
+    elif task.name == "order_success":
         actions = {
-            "high": "Trigger proactive customer care follow-up.",
-            "medium": "Review delivery and seller quality signals before delivery completes.",
-            "low": "Keep standard service flow.",
+            "high": "Keep normal fulfillment flow and prioritize high-value successful orders.",
+            "medium": "Review payment and fulfillment signals to protect conversion.",
+            "low": "Flag for operations review because this order may not complete successfully.",
         }
-    elif task.name == "seller_risk_band":
+    elif task.name == "geo_high_demand":
         actions = {
-            "high": "Review seller SLA breaches and prioritize intervention.",
-            "medium": "Monitor seller performance trend in the next cycle.",
-            "low": "Maintain current seller management cadence.",
-        }
-    elif task.name == "customer_value_tier":
-        actions = {
-            "high": "Prioritize retention and premium campaign targeting.",
-            "medium": "Use nurture campaigns and watch repeat-purchase behavior.",
-            "low": "Use low-cost reactivation and onboarding strategies.",
+            "high": "Increase campaign focus and logistics readiness for this location.",
+            "medium": "Monitor regional demand and prepare targeted offers.",
+            "low": "Keep standard regional planning.",
         }
     else:
         actions = {

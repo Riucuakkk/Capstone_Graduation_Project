@@ -12,8 +12,8 @@ def main():
     parser = argparse.ArgumentParser(description="Train a baseline ML model from marts.")
     parser.add_argument(
         "--task",
-        default="late_delivery",
-        help="Task name. Examples: late_delivery, low_review, customer_value_tier",
+        default="product_bestseller",
+        help="Task name. Examples: product_bestseller, order_success, geo_high_demand",
     )
     args = parser.parse_args()
 

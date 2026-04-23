@@ -14,7 +14,7 @@ from streamlit_app.components.charts import bar_chart, line_chart
 from streamlit_app.components.db_connection import database_is_ready, read_sql
 
 
-st.set_page_config(page_title="Demand Forecast", page_icon="🔮", layout="wide")
+st.set_page_config(page_title="Product Demand", layout="wide")
 
 
 def load_css() -> None:
@@ -26,13 +26,13 @@ def run_query(sql: str, params: tuple | None = None) -> pd.DataFrame:
     try:
         return read_sql(sql, params=params)
     except Exception as exc:
-        st.info(f"Chua doc duoc du lieu forecast: {exc}")
+        st.info(f"Chua doc duoc du lieu demand ML: {exc}")
         return pd.DataFrame()
 
 
 load_css()
-st.title("Demand & Revenue Forecast")
-st.caption("Theo doi chuoi thoi gian category va dau vao cho bai toan daily_category_revenue_regression.")
+st.title("Product Demand")
+st.caption("Theo doi tin hieu san pham ban chay tu mart `fact_ml_product_demand`.")
 
 ready, message = database_is_ready()
 if not ready:
@@ -40,59 +40,70 @@ if not ready:
     st.code(message, language="text")
     st.stop()
 
-category_sql = """
+product_sql = """
 select
-    entity_key,
-    sum(total_revenue)::numeric as revenue
-from marts.fact_demand_series
-where entity_type = 'category'
-group by 1
-order by revenue desc
-limit 30
+    product_key,
+    product_category,
+    sum(total_items)::numeric as historical_units,
+    sum(total_gross_amount)::numeric as historical_revenue,
+    sum(next_7d_units)::numeric as next_7d_units_signal,
+    max(case when is_bestseller_next_7d then 1 else 0 end) as has_bestseller_signal
+from marts.fact_ml_product_demand
+group by 1, 2
+order by next_7d_units_signal desc, historical_revenue desc
+limit 50
 """
-categories = run_query(category_sql)
-if categories.empty:
+products = run_query(product_sql)
+if products.empty:
     st.stop()
 
-selected = st.selectbox("Category", categories["entity_key"].tolist())
+products["label"] = products["product_category"].fillna("unknown") + " | " + products["product_key"].astype(str)
+selected_label = st.selectbox("Product", products["label"].tolist())
+selected_product = products.loc[products["label"] == selected_label, "product_key"].iloc[0]
 
 series_sql = """
 select
     full_date,
+    product_category,
+    total_items,
     total_orders,
-    total_units,
-    total_revenue,
-    avg(total_revenue) over (
-        partition by entity_key
-        order by full_date
-        rows between 6 preceding and current row
-    ) as trailing_7d_avg_revenue
-from marts.fact_demand_series
-where entity_type = 'category'
-  and entity_key = %s
+    total_gross_amount,
+    trailing_7_sale_day_avg_items,
+    trailing_7_sale_day_avg_revenue,
+    next_7d_units,
+    next_7d_revenue,
+    is_bestseller_next_7d
+from marts.fact_ml_product_demand
+where product_key = %s
 order by full_date
 """
-series = run_query(series_sql, (selected,))
+series = run_query(series_sql, (selected_product,))
 
 if series.empty:
-    st.warning("Khong co series cho category da chon.")
+    st.warning("Khong co series cho san pham da chon.")
     st.stop()
 
 col1, col2, col3 = st.columns(3)
-col1.metric("Revenue", f"${float(series['total_revenue'].sum()):,.0f}")
-col2.metric("Orders", f"{int(series['total_orders'].sum()):,}")
-col3.metric("Units", f"{int(series['total_units'].sum()):,}")
+col1.metric("Historical units", f"{int(series['total_items'].sum()):,}")
+col2.metric("Historical revenue", f"${float(series['total_gross_amount'].sum()):,.0f}")
+col3.metric("Next 7d unit signal", f"{int(series['next_7d_units'].sum()):,}")
 
 chart_df = series.melt(
     id_vars=["full_date"],
-    value_vars=["total_revenue", "trailing_7d_avg_revenue"],
+    value_vars=["total_items", "trailing_7_sale_day_avg_items", "next_7d_units"],
     var_name="metric",
     value_name="value",
 )
-st.plotly_chart(line_chart(chart_df, "full_date", "value", "Revenue trend and 7-day trailing average", "metric"), use_container_width=True)
+st.plotly_chart(
+    line_chart(chart_df, "full_date", "value", "Product demand signals", "metric"),
+    use_container_width=True,
+)
 
-st.markdown('<div class="section-title">Top Demand Signals</div>', unsafe_allow_html=True)
-top = categories.head(12).rename(columns={"entity_key": "category"})
-st.plotly_chart(bar_chart(top, "category", "revenue", "Top categories by historical revenue"), use_container_width=True)
+st.markdown('<div class="section-title">Top Product Signals</div>', unsafe_allow_html=True)
+top = products.head(12).rename(columns={"label": "product"})
+st.plotly_chart(
+    bar_chart(top, "product", "next_7d_units_signal", "Top products by next-7-day demand signal"),
+    use_container_width=True,
+)
 
 st.dataframe(series.tail(60).sort_values("full_date", ascending=False), use_container_width=True, hide_index=True)
