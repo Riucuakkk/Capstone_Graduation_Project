@@ -43,6 +43,18 @@ Default account:
 admin / admin
 ```
 
+Airflow runs at:
+
+```text
+http://localhost:8080
+```
+
+Default account:
+
+```text
+airflow / airflow
+```
+
 Connect Superset to the mart warehouse with:
 
 ```text

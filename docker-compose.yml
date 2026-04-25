@@ -1,5 +1,47 @@
 services:
 
+  airflow-init:
+    build:
+      context: .
+      dockerfile: airflow/Dockerfile
+    container_name: airflow_init
+    entrypoint:
+      - /bin/bash
+    depends_on:
+      - postgres
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__CORE__MAX_ACTIVE_TASKS_PER_DAG: 1
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres:5432/ecommerce
+      AIRFLOW__CORE__LOAD_EXAMPLES: "${AIRFLOW__CORE__LOAD_EXAMPLES}"
+      AIRFLOW__WEBSERVER__SECRET_KEY: "${AIRFLOW__WEBSERVER__SECRET_KEY}"
+      PYTHONPATH: /opt/airflow
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ecommerce
+      DB_USER: airflow
+      DB_PASSWORD: airflow
+      AIRFLOW_ADMIN_USERNAME: "${AIRFLOW_ADMIN_USERNAME}"
+      AIRFLOW_ADMIN_PASSWORD: "${AIRFLOW_ADMIN_PASSWORD}"
+      AIRFLOW_ADMIN_EMAIL: "${AIRFLOW_ADMIN_EMAIL}"
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+      - ./src:/opt/airflow/src
+      - ./data/raw:/opt/airflow/data/raw
+      - ./dbt:/opt/airflow/dbt
+      - ./sql_init:/opt/airflow/sql_init
+    command:
+      - -c
+      - >
+        airflow db migrate &&
+        (airflow users create
+        --username "$${AIRFLOW_ADMIN_USERNAME}"
+        --password "$${AIRFLOW_ADMIN_PASSWORD}"
+        --firstname Airflow
+        --lastname Admin
+        --role Admin
+        --email "$${AIRFLOW_ADMIN_EMAIL}" || true)
+
   postgres:
     image: postgres:15
     container_name: postgres
@@ -31,13 +73,14 @@ services:
       dockerfile: airflow/Dockerfile
     container_name: airflow_webserver
     depends_on:
-      - postgres
+      airflow-init:
+        condition: service_completed_successfully
     environment:
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
       AIRFLOW__CORE__MAX_ACTIVE_TASKS_PER_DAG: 1
       AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres:5432/ecommerce
-      AIRFLOW__CORE__LOAD_EXAMPLES: "False"
-      AIRFLOW__WEBSERVER__SECRET_KEY: ecommerce_secret_2026
+      AIRFLOW__CORE__LOAD_EXAMPLES: "${AIRFLOW__CORE__LOAD_EXAMPLES}"
+      AIRFLOW__WEBSERVER__SECRET_KEY: "${AIRFLOW__WEBSERVER__SECRET_KEY}"
       PYTHONPATH: /opt/airflow
       DB_HOST: postgres
       DB_PORT: 5432
@@ -61,13 +104,14 @@ services:
       dockerfile: airflow/Dockerfile
     container_name: airflow_scheduler
     depends_on:
-      - postgres
+      airflow-init:
+        condition: service_completed_successfully
     environment:
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
       AIRFLOW__CORE__MAX_ACTIVE_TASKS_PER_DAG: 1
       AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres:5432/ecommerce
-      AIRFLOW__CORE__LOAD_EXAMPLES: "False"
-      AIRFLOW__WEBSERVER__SECRET_KEY: ecommerce_secret_2026
+      AIRFLOW__CORE__LOAD_EXAMPLES: "${AIRFLOW__CORE__LOAD_EXAMPLES}"
+      AIRFLOW__WEBSERVER__SECRET_KEY: "${AIRFLOW__WEBSERVER__SECRET_KEY}"
       PYTHONPATH: /opt/airflow
       DB_HOST: postgres
       DB_PORT: 5432
