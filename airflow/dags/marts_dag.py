@@ -5,6 +5,7 @@ from airflow import DAG
 from airflow.operators.bash import BashOperator
 from airflow.operators.email import EmailOperator
 from airflow.operators.empty import EmptyOperator
+from airflow.operators.trigger_dagrun import TriggerDagRunOperator
 from airflow.utils.trigger_rule import TriggerRule
 
 
@@ -74,6 +75,11 @@ with DAG(
         <p>Vui long kiem tra log tren Airflow.</p>
         """,
         trigger_rule=TriggerRule.ONE_FAILED,
+    )
+
+    trigger_ml = TriggerDagRunOperator(
+        task_id="trigger_ml_pipeline",
+        trigger_dag_id="ml_pipeline",
     )
 
     dim_date = build_dbt_task("run_dim_date", "dim_date")
@@ -186,6 +192,7 @@ with DAG(
         bi_superset_product_bestseller,
         bi_superset_order_success,
         bi_superset_geo_demand,
+        trigger_ml,
     ] >> notify_failure
 
-    end >> notify_success
+    end >> trigger_ml >> notify_success
