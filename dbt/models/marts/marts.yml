@@ -38,9 +38,8 @@ models:
       - name: customer_key
         tests:
           - relationships:
-              arguments:
-                to: ref('dim_customers')
-                field: customer_key
+              to: ref('dim_customers')
+              field: customer_key
 
   - name: fact_order_items
     columns:
@@ -49,15 +48,13 @@ models:
       - name: product_key
         tests:
           - relationships:
-              arguments:
-                to: ref('dim_products')
-                field: product_key
+              to: ref('dim_products')
+              field: product_key
       - name: seller_key
         tests:
           - relationships:
-              arguments:
-                to: ref('dim_sellers')
-                field: seller_key
+              to: ref('dim_sellers')
+              field: seller_key
 
   - name: fact_payments
     columns:
