@@ -42,12 +42,12 @@ calendar_spine as (
 select
     cs.metric_date,
     cast(to_char(cs.metric_date, 'YYYYMMDD') as text) as metric_date_key,
-    coalesce(do.orders, 0) as orders,
-    coalesce(do.revenue, 0) as revenue,
-    coalesce(do.avg_order_value, 0) as avg_order_value,
-    coalesce(do.delivered_rate, 0) as delivered_rate,
-    coalesce(do.not_successful_rate, 0) as not_successful_rate,
-    coalesce(do.avg_approval_hours, 0) as avg_approval_hours,
+    coalesce(daily.orders, 0) as orders,
+    coalesce(daily.revenue, 0) as revenue,
+    coalesce(daily.avg_order_value, 0) as avg_order_value,
+    coalesce(daily.delivered_rate, 0) as delivered_rate,
+    coalesce(daily.not_successful_rate, 0) as not_successful_rate,
+    coalesce(daily.avg_approval_hours, 0) as avg_approval_hours,
     coalesce(ps.bestseller_product_rows, 0) as bestseller_product_rows,
     coalesce(ps.next_7d_product_units_signal, 0) as next_7d_product_units_signal,
     coalesce(ps.next_7d_product_revenue_signal, 0) as next_7d_product_revenue_signal,
@@ -55,8 +55,8 @@ select
     coalesce(gs.next_7d_geo_orders_signal, 0) as next_7d_geo_orders_signal,
     coalesce(gs.next_7d_geo_revenue_signal, 0) as next_7d_geo_revenue_signal
 from calendar_spine cs
-left join daily_orders do
-    on cs.metric_date = do.metric_date
+left join daily_orders daily
+    on cs.metric_date = daily.metric_date
 left join product_signal ps
     on cs.metric_date = ps.metric_date
 left join geo_signal gs
