@@ -28,6 +28,16 @@ DEFAULT_TEST_SIZE = 0.2
 DEFAULT_RANDOM_STATE = 42
 
 
+def _ordered_unique(columns: list[str]) -> list[str]:
+    seen: set[str] = set()
+    unique_columns: list[str] = []
+    for column in columns:
+        if column not in seen:
+            seen.add(column)
+            unique_columns.append(column)
+    return unique_columns
+
+
 def _normalize_scalar(value: Any) -> Any:
     if pd.isna(value):
         return None
@@ -279,10 +289,15 @@ def split_features_and_target(df: pd.DataFrame, task: TaskConfig):
     if task.time_column:
         selected_columns.append(task.time_column)
 
-    clean_df = df[selected_columns].copy()
+    clean_df = df.loc[:, _ordered_unique(selected_columns)].copy()
     clean_df = clean_df.dropna(subset=[task.target_column]).reset_index(drop=True)
 
-    X = clean_df[feature_columns]
+    X = clean_df.loc[:, _ordered_unique(feature_columns)].copy()
+    if not X.columns.is_unique:
+        duplicate_columns = X.columns[X.columns.duplicated()].tolist()
+        raise ValueError(
+            f"Task '{task.name}' produced duplicate feature columns: {duplicate_columns}"
+        )
     y = clean_df[task.target_column]
     ids = clean_df[task.id_columns]
     split_values = clean_df[task.time_column] if task.time_column else None
@@ -407,9 +422,14 @@ def train_task(df: pd.DataFrame, task: TaskConfig) -> dict:
 
 
 def prepare_inference_frame(df: pd.DataFrame, task: TaskConfig) -> tuple[pd.DataFrame, pd.DataFrame]:
-    feature_columns = task.numeric_features + task.categorical_features
-    ids = df[task.id_columns].copy()
-    X = df[feature_columns].copy()
+    feature_columns = _ordered_unique(task.numeric_features + task.categorical_features)
+    ids = df.loc[:, _ordered_unique(task.id_columns)].copy()
+    X = df.loc[:, feature_columns].copy()
+    if not X.columns.is_unique:
+        duplicate_columns = X.columns[X.columns.duplicated()].tolist()
+        raise ValueError(
+            f"Task '{task.name}' produced duplicate feature columns: {duplicate_columns}"
+        )
     return ids, X
 
 
