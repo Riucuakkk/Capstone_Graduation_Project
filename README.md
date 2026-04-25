@@ -12,21 +12,32 @@ The pipeline demonstrates key Data Engineering concepts, including:
 - Containerized deployment
 
 ## Business Context
-The project is built around the Olist Brazilian E-commerce public dataset, a public dataset centered on real e-commerce activity in Brazil and collected by Olist from its marketplace ecosystem.
-It records around 100,000 orders between 2016 and 2018 and provides a full business view across order status, product attributes, prices, payment methods, freight, customer location, customer reviews, and geolocation references mapped from Brazilian zip codes to latitude/longitude.
-
-Because the dataset reflects how online commerce operates in Brazil, the project is framed not just as a technical data pipeline, but as a business analytics and decision-support system.
-The goal is to turn Olist's collected operational data into structured marts, BI dashboards, and ML workflows that support analysis of sales performance, fulfillment quality, customer demand, and near-term business signals.
-
-This business context makes the project suitable for three practical decision-making scenarios:
+This project uses the Olist Brazilian E-commerce public dataset, built around real e-commerce activity in Brazil and collected by Olist from its marketplace ecosystem.
+The dataset covers orders, products, payments, freight, customer geography, and reviews, and is used here to support three practical decision-making scenarios:
 - demand planning: identify products that are likely to become bestsellers in the next 7 days so inventory and marketing can be prioritized early
 - order operations: identify orders that are at risk of not completing successfully so operations can intervene sooner
 - regional planning: identify cities or regions that are likely to show high demand so campaign budget and logistics readiness can be allocated better
 
-Instead of stopping at raw reporting, the project turns these business questions into analytics-ready marts, BI views, and ML workflows that help answer not just what happened, but what is likely to happen next.
-
 ## System Architecture
 ![KienTruc](images/kientruc.png)
+
+The architecture is organized as a layered data platform that moves from raw source ingestion to business-facing analytics and ML consumption:
+
+- Source layer: raw Olist CSV files are ingested into PostgreSQL under the `source` schema as the landing zone for downstream processing.
+- Staging layer: dbt standardizes source structures, data types, and naming conventions so later layers work with cleaner, consistent models.
+- Raw Vault layer: core business entities such as customers, orders, products, sellers, reviews, and their links are modeled with Data Vault hubs, links, and satellites to preserve history and traceability.
+- Business Vault layer: integration logic is added on top of Raw Vault to produce reusable business-aligned structures that are easier to transform into analytical facts and dimensions.
+- Datamart layer: dbt builds star-schema style marts and ML-ready fact tables for reporting, KPI tracking, and predictive use cases.
+- Orchestration layer: Apache Airflow coordinates ingestion, transformation, data quality checks, mart refresh, and ML jobs in the correct dependency order.
+- Serving layer: Superset consumes BI-ready views for dashboards, while the Streamlit app exposes both dashboard navigation and prediction flows for end users.
+
+From an end-to-end flow perspective:
+
+- raw data is loaded into PostgreSQL
+- dbt transforms it through staging, vault, and datamart layers
+- Airflow schedules and monitors each pipeline stage
+- marts and ML outputs are published for BI dashboards and user-facing prediction screens
+
 ## Dataset
 - Dataset used in this project:
 - Olist Brazilian E-commerce Dataset
