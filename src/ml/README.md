@@ -30,6 +30,8 @@ python -m src.ml.train_model --task product_bestseller
 python -m src.ml.predict --task product_bestseller --limit 50
 python -m src.ml.train_model --task order_success
 python -m src.ml.train_model --task geo_high_demand
+python -m src.ml.train_model --task product_bestseller --persist-run --run-id manual-train-001
+python -m src.ml.predict --task product_bestseller --limit 0 --write-output --run-id manual-predict-001
 ```
 
 ## Artifact output
@@ -38,6 +40,19 @@ Model va metadata duoc luu trong `src/ml/models/`:
 
 - `<task>.joblib`
 - `<task>.json`
+
+## Batch output
+
+Khi dung `--persist-run` va `--write-output`, service se tao schema `ml` trong Postgres va ghi vao:
+
+- `ml.training_runs`: log moi lan train model
+- `ml.predictions`: batch prediction output de dashboard/app co the doc lai
+
+## Airflow DAG
+
+- DAG moi: `ml_pipeline`
+- Trigger tu dong sau khi `mart_pipeline` thanh cong
+- Moi task ML se chay 2 buoc: train artifact -> predict batch vao Postgres
 
 ## Giai doan tiep theo
 

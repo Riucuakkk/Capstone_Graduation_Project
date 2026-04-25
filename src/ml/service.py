@@ -4,9 +4,11 @@ import json
 from dataclasses import asdict
 from pathlib import Path
 from typing import Any
+from uuid import uuid4
 
 import joblib
 import pandas as pd
+from psycopg2.extras import Json, execute_values
 from sklearn.compose import ColumnTransformer
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.impute import SimpleImputer
@@ -24,6 +26,21 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 MODEL_DIR = PROJECT_ROOT / "src" / "ml" / "models"
 DEFAULT_TEST_SIZE = 0.2
 DEFAULT_RANDOM_STATE = 42
+
+
+def _normalize_scalar(value: Any) -> Any:
+    if pd.isna(value):
+        return None
+    if hasattr(value, "item"):
+        value = value.item()
+    if hasattr(value, "isoformat"):
+        return value.isoformat()
+    return value
+
+
+def _normalize_score(value: Any) -> float | None:
+    normalized = _normalize_scalar(value)
+    return None if normalized is None else float(normalized)
 
 
 # Nhom ham doc du lieu tu mart. Moi task tu dinh nghia SQL trong tasks.py.
@@ -73,6 +90,186 @@ def load_model(task_name: str):
 def load_metadata(task_name: str) -> dict:
     metadata_path = artifact_base_path(task_name).with_suffix(".json")
     return json.loads(metadata_path.read_text(encoding="utf-8"))
+
+
+def ensure_tracking_tables() -> None:
+    ddl = """
+    create schema if not exists ml;
+
+    create table if not exists ml.training_runs (
+        id bigserial primary key,
+        external_run_id text not null unique,
+        task_name text not null,
+        problem_type text not null,
+        prediction_name text not null,
+        business_goal text not null,
+        train_rows integer not null,
+        test_rows integer not null,
+        split_strategy text not null,
+        metrics_json jsonb not null,
+        model_path text not null,
+        metadata_path text not null,
+        created_at timestamptz not null default now()
+    );
+
+    create table if not exists ml.predictions (
+        id bigserial primary key,
+        prediction_run_id text not null,
+        source_run_id text,
+        task_name text not null,
+        entity_name text not null,
+        prediction_name text not null,
+        ids_json jsonb not null,
+        prediction_value text,
+        prediction_score double precision,
+        risk_band text,
+        recommended_action text,
+        business_goal text not null,
+        model_metrics_json jsonb not null,
+        created_at timestamptz not null default now()
+    );
+
+    create index if not exists idx_ml_predictions_run_id on ml.predictions (prediction_run_id);
+    create index if not exists idx_ml_predictions_task_name on ml.predictions (task_name);
+    """
+
+    conn = get_connection()
+    try:
+        with conn:
+            with conn.cursor() as cursor:
+                cursor.execute(ddl)
+    finally:
+        conn.close()
+
+
+def persist_training_run(
+    task: TaskConfig,
+    training_result: dict[str, Any],
+    artifact_paths: dict[str, str],
+    run_id: str | None = None,
+) -> dict[str, Any]:
+    ensure_tracking_tables()
+    external_run_id = run_id or f"{task.name}-train-{uuid4().hex[:12]}"
+
+    conn = get_connection()
+    try:
+        with conn:
+            with conn.cursor() as cursor:
+                cursor.execute(
+                    "delete from ml.training_runs where external_run_id = %s",
+                    (external_run_id,),
+                )
+                cursor.execute(
+                    """
+                    insert into ml.training_runs (
+                        external_run_id,
+                        task_name,
+                        problem_type,
+                        prediction_name,
+                        business_goal,
+                        train_rows,
+                        test_rows,
+                        split_strategy,
+                        metrics_json,
+                        model_path,
+                        metadata_path
+                    )
+                    values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    returning external_run_id, created_at
+                    """,
+                    (
+                        external_run_id,
+                        task.name,
+                        task.problem_type,
+                        task.prediction_name,
+                        task.business_goal,
+                        int(training_result["train_rows"]),
+                        int(training_result["test_rows"]),
+                        training_result["split_strategy"],
+                        Json(training_result["metrics"]),
+                        artifact_paths["model_path"],
+                        artifact_paths["metadata_path"],
+                    ),
+                )
+                saved_run_id, created_at = cursor.fetchone()
+    finally:
+        conn.close()
+
+    return {
+        "external_run_id": saved_run_id,
+        "created_at": created_at.isoformat(),
+    }
+
+
+def persist_prediction_output(
+    task: TaskConfig,
+    output: pd.DataFrame,
+    model_metrics: dict[str, Any],
+    run_id: str | None = None,
+    source_run_id: str | None = None,
+) -> dict[str, Any]:
+    ensure_tracking_tables()
+    prediction_run_id = run_id or f"{task.name}-predict-{uuid4().hex[:12]}"
+    rows: list[tuple[Any, ...]] = []
+
+    for record in output.to_dict(orient="records"):
+        ids_json = {column: _normalize_scalar(record.get(column)) for column in task.id_columns}
+        prediction_value = _normalize_scalar(record.get("prediction"))
+        rows.append(
+            (
+                prediction_run_id,
+                source_run_id,
+                task.name,
+                task.entity_name,
+                task.prediction_name,
+                Json(ids_json),
+                None if prediction_value is None else str(prediction_value),
+                _normalize_score(record.get("prediction_score")),
+                _normalize_scalar(record.get("risk_band")),
+                _normalize_scalar(record.get("recommended_action")),
+                task.business_goal,
+                Json(model_metrics),
+            )
+        )
+
+    conn = get_connection()
+    try:
+        with conn:
+            with conn.cursor() as cursor:
+                cursor.execute(
+                    "delete from ml.predictions where prediction_run_id = %s",
+                    (prediction_run_id,),
+                )
+                if rows:
+                    execute_values(
+                        cursor,
+                        """
+                        insert into ml.predictions (
+                            prediction_run_id,
+                            source_run_id,
+                            task_name,
+                            entity_name,
+                            prediction_name,
+                            ids_json,
+                            prediction_value,
+                            prediction_score,
+                            risk_band,
+                            recommended_action,
+                            business_goal,
+                            model_metrics_json
+                        )
+                        values %s
+                        """,
+                        rows,
+                    )
+    finally:
+        conn.close()
+
+    return {
+        "prediction_run_id": prediction_run_id,
+        "rows_written": len(rows),
+        "source_run_id": source_run_id,
+    }
 
 
 # Nhom ham bien doi du lieu thanh X/y/id va dung pipeline sklearn.
@@ -319,7 +516,7 @@ def _resolve_classification_scores(model, task, X):
 
 
 # API chinh cho CLI/API layer: train model, predict va liet ke catalog task.
-def train_service(task_name: str) -> dict:
+def train_service(task_name: str, persist_run: bool = False, run_id: str | None = None) -> dict:
     task = get_task(task_name)
     df = load_task_frame(task)
     training_result = train_task(df, task)
@@ -338,7 +535,7 @@ def train_service(task_name: str) -> dict:
         },
     )
 
-    return {
+    result = {
         "task_name": task_name,
         "problem_type": task.problem_type,
         "prediction_name": task.prediction_name,
@@ -350,8 +547,19 @@ def train_service(task_name: str) -> dict:
         **artifact_paths,
     }
 
+    if persist_run:
+        result["training_run"] = persist_training_run(task, training_result, artifact_paths, run_id)
 
-def predict_service(task_name: str, limit: int) -> dict:
+    return result
+
+
+def predict_service(
+    task_name: str,
+    limit: int,
+    write_output: bool = False,
+    run_id: str | None = None,
+    source_run_id: str | None = None,
+) -> dict:
     task = get_task(task_name)
     model = load_model(task_name)
     metadata = load_metadata(task_name)
@@ -369,13 +577,24 @@ def predict_service(task_name: str, limit: int) -> dict:
 
     output = make_prediction_output(task, ids, predictions, score_values)
 
-    return {
+    result = {
         "task_name": task_name,
         "model_metrics": metadata.get("metrics", {}),
         "rows_scored": int(len(output)),
         "prediction_preview": output.head(20).to_dict(orient="records"),
         "genai_summary": summarize_for_genai(task, output),
     }
+
+    if write_output:
+        result["prediction_run"] = persist_prediction_output(
+            task,
+            output,
+            metadata.get("metrics", {}),
+            run_id=run_id,
+            source_run_id=source_run_id,
+        )
+
+    return result
 
 
 def task_catalog() -> list[dict]:
