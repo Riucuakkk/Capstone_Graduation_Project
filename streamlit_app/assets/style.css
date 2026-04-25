@@ -34,6 +34,12 @@ section[data-testid="stSidebar"] * {
   color: #e5edf7;
 }
 
+section[data-testid="stSidebar"] div[data-testid="stCodeBlock"] pre,
+section[data-testid="stSidebar"] div[data-testid="stCodeBlock"] code,
+section[data-testid="stSidebar"] .stCode code {
+  color: #111827 !important;
+}
+
 .block-container {
   padding-top: 1.8rem;
   padding-bottom: 2.5rem;
@@ -192,6 +198,26 @@ div[data-testid="stDataFrame"] {
 }
 
 .stButton > button:hover {
+  background: #115e59;
+  color: white;
+}
+
+.stLinkButton > a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 46px;
+  border-radius: 7px;
+  border: 0;
+  background: linear-gradient(135deg, #0f766e, #115e59);
+  color: white;
+  font-weight: 800;
+  text-decoration: none;
+  box-shadow: 0 10px 24px rgba(15, 118, 110, 0.22);
+}
+
+.stLinkButton > a:hover {
   background: #115e59;
   color: white;
 }

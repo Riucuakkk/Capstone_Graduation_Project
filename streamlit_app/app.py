@@ -61,6 +61,24 @@ TASK_LABELS = {item["task_name"]: item["label"] for item in BUSINESS_TASKS}
 TASK_CAPTIONS = {item["task_name"]: item["caption"] for item in BUSINESS_TASKS}
 TASK_GOALS = {item["task_name"]: item["goal"] for item in BUSINESS_TASKS}
 TASK_QUESTIONS = {item["task_name"]: item["questions"] for item in BUSINESS_TASKS}
+DEFAULT_SUPERSET_DASHBOARD_URL = "http://localhost:8088/dashboard/list/"
+SUPERSET_DASHBOARDS = [
+    {
+        "label": "Dashboard Sản phẩm bán chạy",
+        "caption": "Mở dashboard Superset cho use case product bestseller.",
+        "env_var": "SUPERSET_PRODUCT_BESTSELLER_DASHBOARD_URL",
+    },
+    {
+        "label": "Dashboard Đơn hàng thành công",
+        "caption": "Mở dashboard Superset cho use case order success.",
+        "env_var": "SUPERSET_ORDER_SUCCESS_DASHBOARD_URL",
+    },
+    {
+        "label": "Dashboard Khu vực nhu cầu cao",
+        "caption": "Mở dashboard Superset cho use case geo demand.",
+        "env_var": "SUPERSET_GEO_DEMAND_DASHBOARD_URL",
+    },
+]
 
 
 def load_css() -> None:
@@ -91,12 +109,30 @@ def metadata_path(task_name: str) -> Path:
     return ROOT / "src" / "ml" / "models" / f"{task_name}.json"
 
 
-def superset_dashboard_url() -> str:
-    return os.getenv("SUPERSET_DASHBOARD_URL", "http://localhost:8088/dashboard/list/")
+def superset_dashboard_fallback_url() -> str:
+    return os.getenv("SUPERSET_DASHBOARD_URL", DEFAULT_SUPERSET_DASHBOARD_URL)
 
 
-def superset_dashboard_is_configured() -> bool:
-    return "dashboard/list" not in superset_dashboard_url()
+def superset_dashboard_url(env_var: str) -> str:
+    return os.getenv(env_var, superset_dashboard_fallback_url())
+
+
+def superset_dashboard_is_configured(url: str) -> bool:
+    return "dashboard/list" not in url.rstrip("/")
+
+
+def superset_dashboard_entries() -> list[dict[str, str | bool]]:
+    entries: list[dict[str, str | bool]] = []
+    for dashboard in SUPERSET_DASHBOARDS:
+        url = superset_dashboard_url(dashboard["env_var"])
+        entries.append(
+            {
+                **dashboard,
+                "url": url,
+                "configured": superset_dashboard_is_configured(url),
+            }
+        )
+    return entries
 
 
 def load_model(task_name: str):
@@ -236,8 +272,10 @@ def render_home(ready: bool, message: str) -> None:
           <span class="status-pill{status_class}">{status_label}</span>
           <h1>E-commerce ML & BI Command Center</h1>
           <p>
-            Ch\u1ecdn nhanh \u0111\u00fang khu v\u1ef1c c\u00f4ng vi\u1ec7c: v\u00e0o dashboard \u0111\u1ec3 xem t\u1ed5ng quan d\u1eef li\u1ec7u,
-            ho\u1eb7c v\u00e0o d\u1ef1 \u0111o\u00e1n \u0111\u1ec3 nh\u1eadp th\u00f4ng tin v\u00e0 nh\u1eadn k\u1ebft qu\u1ea3 t\u1eeb m\u00f4 h\u00ecnh machine learning.
+            D\u1ef1 \u00e1n khai th\u00e1c b\u1ed9 d\u1eef li\u1ec7u c\u00f4ng khai v\u1ec1 th\u01b0\u01a1ng m\u1ea1i \u0111i\u1ec7n t\u1eed t\u1ea1i Brazil do Olist thu th\u1eadp t\u1eeb h\u1ec7 sinh th\u00e1i marketplace,
+            ghi nh\u1eadn kho\u1ea3ng 100.000 \u0111\u01a1n h\u00e0ng giai \u0111o\u1ea1n 2016-2018 c\u00f9ng th\u00f4ng tin v\u1ec1 tr\u1ea1ng th\u00e1i \u0111\u01a1n, gi\u00e1, thanh to\u00e1n, v\u1eadn chuy\u1ec3n, v\u1ecb tr\u00ed kh\u00e1ch h\u00e0ng, thu\u1ed9c t\u00ednh s\u1ea3n ph\u1ea9m v\u00e0 \u0111\u00e1nh gi\u00e1 sau mua.
+            T\u1eeb context kinh doanh \u0111\u00f3, h\u1ec7 th\u1ed1ng \u0111\u1ecbnh h\u01b0\u1edbng d\u1eef li\u1ec7u sang ph\u00e2n t\u00edch v\u00e0 h\u1ed7 tr\u1ee3 ra quy\u1ebft \u0111\u1ecbnh theo 3 nghi\u1ec7p v\u1ee5 \u0111\u00e3 th\u1ed1ng nh\u1ea5t:
+            d\u1ef1 b\u00e1o s\u1ea3n ph\u1ea9m b\u00e1n ch\u1ea1y, d\u1ef1 b\u00e1o \u0111\u01a1n h\u00e0ng th\u00e0nh c\u00f4ng, v\u00e0 d\u1ef1 b\u00e1o khu v\u1ef1c nhu c\u1ea7u cao \u0111\u1ec3 ph\u1ee5c v\u1ee5 quy\u1ebft \u0111\u1ecbnh t\u1ed3n kho, marketing v\u00e0 v\u1eadn h\u00e0nh.
           </p>
         </div>
         """,
@@ -257,7 +295,7 @@ def render_home(ready: bool, message: str) -> None:
             <div class="nav-card">
               <div class="label">D\u1ef1 \u0111o\u00e1n</div>
               <div class="value">Machine Learning</div>
-              <div class="hint">Nh\u1eadp d\u1eef li\u1ec7u cho t\u1eebng nghi\u1ec7p v\u1ee5 v\u00e0 nh\u1eadn k\u1ebft qu\u1ea3 d\u1ef1 \u0111o\u00e1n ngay l\u1eadp t\u1ee9c.</div>
+              <div class="hint">M\u00f4 ph\u1ecfng 3 b\u00e0i to\u00e1n nghi\u1ec7p v\u1ee5 c\u1ed1t l\u00f5i: s\u1ea3n ph\u1ea9m n\u00e0o s\u1eafp b\u00e1n ch\u1ea1y, \u0111\u01a1n h\u00e0ng n\u00e0o c\u00f3 nguy c\u01a1 kh\u00f4ng th\u00e0nh c\u00f4ng, v\u00e0 khu v\u1ef1c n\u00e0o s\u1eafp t\u0103ng nhu c\u1ea7u.</div>
             </div>
             """,
             unsafe_allow_html=True,
@@ -270,7 +308,7 @@ def render_home(ready: bool, message: str) -> None:
             <div class="nav-card">
               <div class="label">Dashboard</div>
               <div class="value">T\u1ed5ng quan kinh doanh</div>
-              <div class="hint">Xem KPI, doanh thu, c\u01a1 c\u1ea5u thanh to\u00e1n, \u0111i\u1ec3m \u0111\u00e1nh gi\u00e1 v\u00e0 c\u00e1c xu h\u01b0\u1edbng kinh doanh.</div>
+              <div class="hint">Theo d\u00f5i KPI, doanh thu, thanh to\u00e1n, \u0111\u00e1nh gi\u00e1 kh\u00e1ch h\u00e0ng v\u00e0 c\u00e1c t\u00edn hi\u1ec7u d\u1ef1 b\u00e1o \u0111\u1ec3 ph\u1ee5c v\u1ee5 quy\u1ebft \u0111\u1ecbnh kinh doanh tr\u00ean d\u1eef li\u1ec7u Olist.</div>
             </div>
             """,
             unsafe_allow_html=True,
@@ -283,7 +321,7 @@ def render_predict_menu() -> None:
         """
         <div class="hero compact">
           <h1>Ch\u1ecdn Nghi\u1ec7p V\u1ee5 D\u1ef1 \u0110o\u00e1n</h1>
-          <p>M\u1ed7i b\u00e0i to\u00e1n s\u1ebd c\u00f3 m\u1ed9t form ri\u00eang \u0111\u1ec3 nh\u1eadp d\u1eef li\u1ec7u v\u00e0 tr\u1ea3 v\u1ec1 k\u1ebft qu\u1ea3 d\u1ef1 \u0111o\u00e1n sau khi nh\u1ea5n submit.</p>
+          <p>M\u1ed7i b\u00e0i to\u00e1n t\u01b0\u01a1ng \u1ee9ng v\u1edbi m\u1ed9t quy\u1ebft \u0111\u1ecbnh nghi\u1ec7p v\u1ee5 th\u1ef1c t\u1ebf trong th\u01b0\u01a1ng m\u1ea1i \u0111i\u1ec7n t\u1eed: \u01b0u ti\u00ean t\u1ed3n kho, can thi\u1ec7p \u0111\u01a1n h\u00e0ng r\u1ee7i ro, ho\u1eb7c chu\u1ea9n b\u1ecb campaign/logistics theo khu v\u1ef1c.</p>
         </div>
         """,
         unsafe_allow_html=True,
@@ -313,31 +351,53 @@ def render_predict_menu() -> None:
 
 
 def render_dashboard(ready: bool, message: str) -> None:
-    dashboard_url = superset_dashboard_url()
+    dashboard_entries = superset_dashboard_entries()
+    has_unconfigured_dashboard = any(not entry["configured"] for entry in dashboard_entries)
 
     st.markdown(
         """
         <div class="hero compact">
           <h1>BI Dashboard</h1>
-          <p>Trang n\u00e0y m\u1edf th\u1eb3ng dashboard BI trong Superset thay v\u00ec t\u1ef1 query v\u00e0 v\u1ebd chart trong Streamlit.</p>
+          <p>Trang này là hub mở nhanh 3 dashboard Superset riêng cho 3 use case ML.</p>
         </div>
         """,
         unsafe_allow_html=True,
     )
     st.button("Quay l\u1ea1i trang ch\u1ee7", on_click=go_to, args=("home", None))
-    st.link_button("M\u1edf dashboard Superset", dashboard_url, use_container_width=True)
+    if not ready:
+        st.warning("Cơ sở dữ liệu đang ngoại tuyến. Bạn vẫn có thể mở dashboard nếu Superset và Postgres còn truy cập được.")
+        st.code(message, language="text")
 
-    if superset_dashboard_is_configured():
-        st.success("\u0110ang d\u00f9ng link dashboard Superset \u0111\u00e3 c\u1ea5u h\u00ecnh.")
-    else:
+    st.markdown('<div class="section-title">Danh sách dashboard</div>', unsafe_allow_html=True)
+    columns = st.columns(3)
+    for column, entry in zip(columns, dashboard_entries):
+        with column:
+            st.markdown(
+                f"""
+                <div class="nav-card">
+                  <div class="label">{entry["label"]}</div>
+                  <div class="hint">{entry["caption"]}</div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+            st.link_button(
+                f"Mở {entry['label']}",
+                str(entry["url"]),
+                use_container_width=True,
+            )
+            if entry["configured"]:
+                st.caption("Đã cấu hình link dashboard riêng.")
+            else:
+                st.caption(f"Chưa cấu hình `{entry['env_var']}`, đang fallback sang dashboard list.")
+
+    if has_unconfigured_dashboard:
         st.info(
-            "Hi\u1ec7n n\u00fat n\u00e0y \u0111ang m\u1edf trang danh s\u00e1ch dashboard c\u1ee7a Superset. "
-            "Sau khi b\u1ea1n t\u1ea1o xong BI, h\u00e3y c\u1eadp nh\u1eadt bi\u1ebfn m\u00f4i tr\u01b0\u1eddng "
-            "`SUPERSET_DASHBOARD_URL` th\u00e0nh link dashboard c\u1ee5 th\u1ec3."
+            "Để từng nút mở đúng dashboard riêng trong Superset, hãy cập nhật các biến môi trường "
+            "`SUPERSET_PRODUCT_BESTSELLER_DASHBOARD_URL`, "
+            "`SUPERSET_ORDER_SUCCESS_DASHBOARD_URL`, "
+            "`SUPERSET_GEO_DEMAND_DASHBOARD_URL`."
         )
-
-    st.code(dashboard_url, language="text")
-
 
 def render_prediction_result(task_name: str, prediction_value, prediction_score: float | None) -> None:
     band = score_to_band(prediction_score)
