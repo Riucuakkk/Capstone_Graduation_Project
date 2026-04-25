@@ -1,0 +1,114 @@
+{
+  "task": {
+    "name": "order_success",
+    "problem_type": "classification",
+    "entity_name": "order",
+    "prediction_name": "order_success_probability",
+    "business_goal": "Predict whether an order is likely to become a successful delivered sale.",
+    "source_sql": "\n            select\n                ml_sample_key,\n                order_key,\n                customer_key,\n                order_date_key,\n                order_date,\n                customer_city,\n                customer_state,\n                total_items,\n                distinct_products,\n                distinct_sellers,\n                total_item_price,\n                total_freight_value,\n                total_gross_amount,\n                payment_transaction_count,\n                distinct_payment_type_count,\n                total_payment_value,\n                max_payment_installments,\n                has_installments,\n                uses_credit_card,\n                uses_voucher,\n                dominant_payment_type,\n                approval_lead_hours,\n                is_successful_order\n            from marts.fact_ml_order_success\n        ",
+    "target_column": "is_successful_order",
+    "id_columns": [
+      "ml_sample_key",
+      "order_key"
+    ],
+    "numeric_features": [
+      "total_items",
+      "distinct_products",
+      "distinct_sellers",
+      "total_item_price",
+      "total_freight_value",
+      "total_gross_amount",
+      "payment_transaction_count",
+      "distinct_payment_type_count",
+      "total_payment_value",
+      "max_payment_installments",
+      "approval_lead_hours"
+    ],
+    "categorical_features": [
+      "customer_key",
+      "customer_city",
+      "customer_state",
+      "has_installments",
+      "uses_credit_card",
+      "uses_voucher",
+      "dominant_payment_type"
+    ],
+    "where_clause": "where is_successful_order is not null",
+    "time_column": "order_date",
+    "positive_class_label": true,
+    "lower_is_riskier": false,
+    "example_questions": [
+      "Don hang nao co kha nang hoan tat thanh cong?",
+      "Don nao can can thiep som de tang ty le giao thanh cong?"
+    ]
+  },
+  "metrics": {
+    "accuracy": 0.9955478225269945,
+    "f1_weighted": 0.9949007293454888
+  },
+  "train_rows": 78163,
+  "test_rows": 19541,
+  "split_strategy": "time",
+  "feature_columns": [
+    "total_items",
+    "distinct_products",
+    "distinct_sellers",
+    "total_item_price",
+    "total_freight_value",
+    "total_gross_amount",
+    "payment_transaction_count",
+    "distinct_payment_type_count",
+    "total_payment_value",
+    "max_payment_installments",
+    "approval_lead_hours",
+    "customer_key",
+    "customer_city",
+    "customer_state",
+    "has_installments",
+    "uses_credit_card",
+    "uses_voucher",
+    "dominant_payment_type"
+  ],
+  "sample_prediction_keys": [
+    {
+      "ml_sample_key": "9e6bc602a2466daa94736f31d1319c5d",
+      "order_key": "9e6bc602a2466daa94736f31d1319c5d"
+    },
+    {
+      "ml_sample_key": "370cfb4244f1a15b8d60d32fce42c3fd",
+      "order_key": "370cfb4244f1a15b8d60d32fce42c3fd"
+    },
+    {
+      "ml_sample_key": "5f42573c60286a6f9d6a3809352c86e0",
+      "order_key": "5f42573c60286a6f9d6a3809352c86e0"
+    },
+    {
+      "ml_sample_key": "a50aa8b40d7c388a14e6fe4ec5528ec3",
+      "order_key": "a50aa8b40d7c388a14e6fe4ec5528ec3"
+    },
+    {
+      "ml_sample_key": "be27ab7c550fcd6a7988396258c309f7",
+      "order_key": "be27ab7c550fcd6a7988396258c309f7"
+    },
+    {
+      "ml_sample_key": "e4ce7e9f0b81f2de2415e30494021d2c",
+      "order_key": "e4ce7e9f0b81f2de2415e30494021d2c"
+    },
+    {
+      "ml_sample_key": "d7c663de1470a2d3671791d3f093991c",
+      "order_key": "d7c663de1470a2d3671791d3f093991c"
+    },
+    {
+      "ml_sample_key": "05457977f35122e71095989d738e4a37",
+      "order_key": "05457977f35122e71095989d738e4a37"
+    },
+    {
+      "ml_sample_key": "aa5d6c8f531d300ba705fa1f78e02a9c",
+      "order_key": "aa5d6c8f531d300ba705fa1f78e02a9c"
+    },
+    {
+      "ml_sample_key": "e5b203174e16a24326eca2118bf82a94",
+      "order_key": "e5b203174e16a24326eca2118bf82a94"
+    }
+  ]
+}

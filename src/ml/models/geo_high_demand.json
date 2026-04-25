@@ -1,0 +1,117 @@
+{
+  "task": {
+    "name": "geo_high_demand",
+    "problem_type": "classification",
+    "entity_name": "location_day",
+    "prediction_name": "next_7d_high_demand_area_probability",
+    "business_goal": "Predict whether a customer location will become a high-demand area over the next 7 days.",
+    "source_sql": "\n            select\n                ml_sample_key,\n                location_key,\n                customer_state,\n                customer_city,\n                date_key,\n                full_date,\n                calendar_month,\n                calendar_day,\n                iso_weekday,\n                total_orders,\n                total_revenue,\n                late_delivery_ratio,\n                avg_review_score,\n                lag_1_total_orders,\n                lag_1_total_revenue,\n                trailing_7_sale_day_avg_orders,\n                trailing_7_sale_day_avg_revenue,\n                next_7d_orders,\n                next_7d_revenue,\n                is_high_demand_area_next_7d\n            from marts.fact_ml_geo_demand\n        ",
+    "target_column": "is_high_demand_area_next_7d",
+    "id_columns": [
+      "ml_sample_key",
+      "location_key",
+      "date_key"
+    ],
+    "numeric_features": [
+      "calendar_month",
+      "calendar_day",
+      "iso_weekday",
+      "total_orders",
+      "total_revenue",
+      "late_delivery_ratio",
+      "avg_review_score",
+      "lag_1_total_orders",
+      "lag_1_total_revenue",
+      "trailing_7_sale_day_avg_orders",
+      "trailing_7_sale_day_avg_revenue"
+    ],
+    "categorical_features": [
+      "location_key",
+      "customer_state",
+      "customer_city"
+    ],
+    "where_clause": "where is_high_demand_area_next_7d is not null",
+    "time_column": "full_date",
+    "positive_class_label": true,
+    "lower_is_riskier": false,
+    "example_questions": [
+      "Khu vuc nao co kha nang mua hang cao trong 7 ngay toi?",
+      "Nen day campaign hoac chuan bi logistics o dia diem nao?"
+    ]
+  },
+  "metrics": {
+    "accuracy": 1.0,
+    "f1_weighted": 1.0
+  },
+  "train_rows": 507,
+  "test_rows": 127,
+  "split_strategy": "time",
+  "feature_columns": [
+    "calendar_month",
+    "calendar_day",
+    "iso_weekday",
+    "total_orders",
+    "total_revenue",
+    "late_delivery_ratio",
+    "avg_review_score",
+    "lag_1_total_orders",
+    "lag_1_total_revenue",
+    "trailing_7_sale_day_avg_orders",
+    "trailing_7_sale_day_avg_revenue",
+    "location_key",
+    "customer_state",
+    "customer_city"
+  ],
+  "sample_prediction_keys": [
+    {
+      "ml_sample_key": "unknown_unknown_20180512",
+      "location_key": "unknown|unknown",
+      "date_key": "20180512"
+    },
+    {
+      "ml_sample_key": "unknown_unknown_20180513",
+      "location_key": "unknown|unknown",
+      "date_key": "20180513"
+    },
+    {
+      "ml_sample_key": "unknown_unknown_20180514",
+      "location_key": "unknown|unknown",
+      "date_key": "20180514"
+    },
+    {
+      "ml_sample_key": "unknown_unknown_20180515",
+      "location_key": "unknown|unknown",
+      "date_key": "20180515"
+    },
+    {
+      "ml_sample_key": "unknown_unknown_20180516",
+      "location_key": "unknown|unknown",
+      "date_key": "20180516"
+    },
+    {
+      "ml_sample_key": "unknown_unknown_20180517",
+      "location_key": "unknown|unknown",
+      "date_key": "20180517"
+    },
+    {
+      "ml_sample_key": "unknown_unknown_20180518",
+      "location_key": "unknown|unknown",
+      "date_key": "20180518"
+    },
+    {
+      "ml_sample_key": "unknown_unknown_20180519",
+      "location_key": "unknown|unknown",
+      "date_key": "20180519"
+    },
+    {
+      "ml_sample_key": "unknown_unknown_20180520",
+      "location_key": "unknown|unknown",
+      "date_key": "20180520"
+    },
+    {
+      "ml_sample_key": "unknown_unknown_20180521",
+      "location_key": "unknown|unknown",
+      "date_key": "20180521"
+    }
+  ]
+}
