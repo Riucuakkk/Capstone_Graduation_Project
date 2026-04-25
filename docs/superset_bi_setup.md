@@ -1,5 +1,16 @@
 # Superset BI setup for mart and ML use cases
 
+This project uses the Olist Brazilian E-commerce public dataset, a dataset centered on Brazil's e-commerce market and collected by Olist from its marketplace operations.
+It captures around 100,000 orders between 2016 and 2018 and covers the full business flow from order status, pricing, payment, freight, product attributes, customer location, and customer reviews to geolocation references linked from Brazilian zip codes to latitude and longitude.
+
+That context is important because the BI layer here is not meant to be a generic dashboarding exercise.
+It is designed to transform Olist's collected Brazil e-commerce data into business-facing analysis around commerce performance, delivery quality, product demand, and regional opportunity.
+
+From a business perspective, the BI layer in this project is designed to answer three operational questions:
+- which products are likely to become bestsellers soon so inventory and marketing can react earlier
+- which orders are at risk of not becoming successful deliveries so operations can intervene sooner
+- which cities or regions are likely to see higher demand so campaign planning and logistics readiness can be allocated more effectively
+
 ## 1. Start Superset
 
 Run:
