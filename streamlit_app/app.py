@@ -6,6 +6,7 @@ import sys
 from pathlib import Path
 
 import joblib
+import numpy as np
 import pandas as pd
 import streamlit as st
 
@@ -61,6 +62,54 @@ TASK_LABELS = {item["task_name"]: item["label"] for item in BUSINESS_TASKS}
 TASK_CAPTIONS = {item["task_name"]: item["caption"] for item in BUSINESS_TASKS}
 TASK_GOALS = {item["task_name"]: item["goal"] for item in BUSINESS_TASKS}
 TASK_QUESTIONS = {item["task_name"]: item["questions"] for item in BUSINESS_TASKS}
+# Chỉ các trường cốt lõi cần nhập tay cho từng task.
+# Numeric: (col, label, default, min, max) — default=int → ô nguyên, float → ô thập phân
+# Categorical: (col, label, [options])
+CORE_FIELDS: dict[str, dict] = {
+    "product_bestseller": {
+        "numeric": [
+            ("trailing_7_sale_day_avg_items", "TB bán/ngày (7 ngày qua)", 5.0, 0.0, 500.0),
+            ("total_items",                  "Tổng đã bán (lịch sử)",     50.0, 0.0, 10000.0),
+            ("calendar_month",               "Tháng",                     6,    1,   12),
+            ("delivered_late_ratio",         "Tỉ lệ giao trễ (0–1)",      0.1,  0.0, 1.0),
+        ],
+        "categorical": [
+            ("product_category", "Danh mục sản phẩm", [
+                "cama_mesa_banho", "beleza_saude", "esporte_lazer",
+                "informatica_acessorios", "moveis_decoracao", "utilidades_domesticas",
+                "relogios_presentes", "ferramentas_jardim", "automotivo", "brinquedos",
+            ]),
+        ],
+    },
+    "order_success": {
+        "numeric": [
+            ("total_gross_amount",       "Giá trị đơn hàng (R$)",    150.0, 0.0, 5000.0),
+            ("approval_lead_hours",      "Giờ chờ duyệt đơn",          1.0, 0.0, 72.0),
+            ("max_payment_installments", "Số kỳ trả góp tối đa",         1,   1,  24),
+        ],
+        "categorical": [
+            ("dominant_payment_type", "Loại thanh toán chính", [
+                "credit_card", "boleto", "voucher", "debit_card",
+            ]),
+            ("customer_state", "Bang/Tỉnh khách hàng", [
+                "SP", "RJ", "MG", "RS", "PR", "SC", "BA", "DF", "GO", "PE",
+            ]),
+        ],
+    },
+    "geo_high_demand": {
+        "numeric": [
+            ("trailing_7_sale_day_avg_orders", "Đơn TB/ngày (7 ngày qua)", 2.0, 0.0, 200.0),
+            ("avg_review_score",               "Điểm đánh giá TB (1–5)",   4.0, 1.0, 5.0),
+            ("calendar_month",                 "Tháng",                      6,   1,  12),
+        ],
+        "categorical": [
+            ("customer_state", "Bang/Tỉnh", [
+                "SP", "RJ", "MG", "RS", "PR", "SC", "BA", "DF", "GO", "PE",
+            ]),
+        ],
+    },
+}
+
 DEFAULT_SUPERSET_DASHBOARD_URL = "http://localhost:8088/dashboard/list/"
 SUPERSET_DASHBOARDS = [
     {
@@ -467,32 +516,31 @@ def render_predict_form(ready: bool, message: str, task_name: str | None) -> Non
                 col.metric(name, f"{float(value):.4f}")
 
     st.markdown('<div class="section-title">Nh\u1eadp d\u1eef li\u1ec7u d\u1ef1 \u0111o\u00e1n</div>', unsafe_allow_html=True)
-    st.caption("Nh\u1eadp \u0111\u1ea7y \u0111\u1ee7 c\u00e1c tr\u01b0\u1eddng d\u1eef li\u1ec7u, sau \u0111\u00f3 nh\u1ea5n G\u1eedi d\u1ef1 \u0111o\u00e1n \u0111\u1ec3 nh\u1eadn k\u1ebft qu\u1ea3.")
+    st.caption("Ch\u1ec9 nh\u1eadp c\u00e1c th\u00f4ng s\u1ed1 c\u1ed1t l\u00f5i \u2014 bi\u1ebfn c\u00f2n l\u1ea1i d\u00f9ng gi\u00e1 tr\u1ecb m\u1eb7c \u0111\u1ecbnh t\u1eeb training data.")
 
-    feature_values: dict[str, object] = {}
+    core = CORE_FIELDS.get(task_name, {"numeric": [], "categorical": []})
     form_key = f"predict_form_{task_name}"
-    with st.form(form_key):
-        st.markdown("**Th\u00f4ng tin \u0111\u1ecbnh t\u00ednh**")
-        categorical_columns = st.columns(2)
-        for index, feature_name in enumerate(task.categorical_features):
-            with categorical_columns[index % 2]:
-                raw_value = st.text_input(
-                    field_label(feature_name),
-                    key=f"{form_key}_{feature_name}",
-                    placeholder=field_placeholder(feature_name),
-                )
-                feature_values[feature_name] = raw_value
 
-        st.markdown("**Th\u00f4ng tin s\u1ed1 h\u1ecdc**")
-        numeric_columns = st.columns(2)
-        for index, feature_name in enumerate(task.numeric_features):
-            with numeric_columns[index % 2]:
-                raw_value = st.text_input(
-                    field_label(feature_name),
-                    key=f"{form_key}_{feature_name}",
-                    placeholder=field_placeholder(feature_name),
-                )
-                feature_values[feature_name] = raw_value
+    with st.form(form_key):
+        cols = st.columns(2)
+        numeric_inputs: dict[str, float] = {}
+        categorical_inputs: dict[str, str] = {}
+
+        for i, (col_name, label, default, min_val, max_val) in enumerate(core["numeric"]):
+            with cols[i % 2]:
+                if isinstance(default, int):
+                    numeric_inputs[col_name] = float(st.number_input(
+                        label, min_value=int(min_val), max_value=int(max_val),
+                        value=int(default), step=1,
+                    ))
+                else:
+                    numeric_inputs[col_name] = st.number_input(
+                        label, min_value=float(min_val), max_value=float(max_val),
+                        value=float(default), step=0.1, format="%.2f",
+                    )
+
+        for col_name, label, options in core["categorical"]:
+            categorical_inputs[col_name] = st.selectbox(label, options)
 
         submitted = st.form_submit_button("G\u1eedi d\u1ef1 \u0111o\u00e1n")
 
@@ -500,19 +548,11 @@ def render_predict_form(ready: bool, message: str, task_name: str | None) -> Non
         return
 
     try:
-        parsed_row = {}
-        for feature_name in task.categorical_features:
-            parsed_row[feature_name] = parse_feature_input(
-                feature_name,
-                str(feature_values[feature_name]),
-                numeric=False,
-            )
+        parsed_row: dict = {}
         for feature_name in task.numeric_features:
-            parsed_row[feature_name] = parse_feature_input(
-                feature_name,
-                str(feature_values[feature_name]),
-                numeric=True,
-            )
+            parsed_row[feature_name] = numeric_inputs.get(feature_name, np.nan)
+        for feature_name in task.categorical_features:
+            parsed_row[feature_name] = categorical_inputs.get(feature_name, np.nan)
 
         model = load_model(task_name)
         inference_row = pd.DataFrame([parsed_row], columns=task.numeric_features + task.categorical_features)
