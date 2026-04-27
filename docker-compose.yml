@@ -130,7 +130,7 @@ services:
   streamlit:
     build:
       context: .
-      dockerfile: streamlit_app/Dockerfile
+      dockerfile: streamlit/Dockerfile
     container_name: streamlit_app
     depends_on:
       - postgres
@@ -146,7 +146,7 @@ services:
       SUPERSET_GEO_DEMAND_DASHBOARD_URL: "${SUPERSET_GEO_DEMAND_DASHBOARD_URL}"
       PYTHONPATH: /app
     volumes:
-      - ./streamlit_app:/app/streamlit_app
+      - ./streamlit:/app/streamlit
       - ./src:/app/src
     ports:
       - "8501:8501"
