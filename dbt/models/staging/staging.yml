@@ -1,0 +1,67 @@
+version: 2
+
+models:
+  - name: v_stg_source_products
+    columns:
+      - name: hashkey
+        tests:
+          - unique
+          - not_null
+
+  - name: v_stg_source_order_items
+    columns:
+      - name: hashkey
+        tests:
+          - unique
+          - not_null
+
+  - name: v_stg_source_orders
+    columns:
+      - name: hashkey
+        tests:
+          - unique
+          - not_null
+
+  - name: v_stg_source_order_payments
+    columns:
+      - name: hashkey
+        tests:
+          - unique
+          - not_null
+
+  - name: v_stg_source_product_category_name_translation
+    columns:
+      - name: hashkey
+        tests:
+          - unique
+          - not_null
+
+  - name: v_stg_source_order_reviews
+    columns:
+      - name: hashkey
+        tests:
+          - unique
+          - not_null
+
+  - name: v_stg_source_sellers
+    columns:
+      - name: hashkey
+        tests:
+          - unique
+          - not_null
+
+  - name: v_stg_source_geolocation
+    columns:
+      - name: hashkey
+        tests:
+          - unique
+          - not_null
+
+  - name: v_stg_source_exchange_rates
+    columns:
+      - name: hashkey
+        tests:
+          - unique
+          - not_null
+
+          

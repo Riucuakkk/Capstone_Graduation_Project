@@ -1,0 +1,135 @@
+{
+  "task": {
+    "name": "product_bestseller",
+    "problem_type": "classification",
+    "entity_name": "product_day",
+    "prediction_name": "next_7d_bestseller_probability",
+    "business_goal": "Predict whether a product will be in the top demand group over the next 7 days.",
+    "source_sql": "\n            select\n                ml_sample_key,\n                product_key,\n                date_key,\n                full_date,\n                product_category,\n                product_name_length,\n                product_description_length,\n                product_photos_qty,\n                product_weight_g,\n                product_length_cm,\n                product_height_cm,\n                product_width_cm,\n                weight_band,\n                calendar_month,\n                calendar_day,\n                iso_weekday,\n                total_items,\n                total_orders,\n                total_gross_amount,\n                total_freight_value,\n                delivered_late_ratio,\n                lag_1_total_items,\n                lag_1_total_orders,\n                lag_1_total_gross_amount,\n                trailing_7_sale_day_avg_items,\n                trailing_7_sale_day_avg_revenue,\n                next_7d_units,\n                next_7d_revenue,\n                is_bestseller_next_7d\n            from marts.fact_ml_product_demand\n        ",
+    "target_column": "is_bestseller_next_7d",
+    "id_columns": [
+      "ml_sample_key",
+      "product_key",
+      "date_key"
+    ],
+    "numeric_features": [
+      "product_name_length",
+      "product_description_length",
+      "product_photos_qty",
+      "product_weight_g",
+      "product_length_cm",
+      "product_height_cm",
+      "product_width_cm",
+      "calendar_month",
+      "calendar_day",
+      "iso_weekday",
+      "total_items",
+      "total_orders",
+      "total_gross_amount",
+      "total_freight_value",
+      "delivered_late_ratio",
+      "lag_1_total_items",
+      "lag_1_total_orders",
+      "lag_1_total_gross_amount",
+      "trailing_7_sale_day_avg_items",
+      "trailing_7_sale_day_avg_revenue"
+    ],
+    "categorical_features": [
+      "product_key",
+      "product_category",
+      "weight_band"
+    ],
+    "where_clause": "where is_bestseller_next_7d is not null",
+    "time_column": "full_date",
+    "positive_class_label": true,
+    "lower_is_riskier": false,
+    "example_questions": [
+      "San pham nao co kha nang ban chay trong 7 ngay toi?",
+      "Nen uu tien ton kho/marketing cho san pham nao?"
+    ]
+  },
+  "metrics": {
+    "accuracy": 0.7990380041228394,
+    "f1_weighted": 0.7097812615069318
+  },
+  "train_rows": 75672,
+  "test_rows": 18919,
+  "split_strategy": "time",
+  "feature_columns": [
+    "product_name_length",
+    "product_description_length",
+    "product_photos_qty",
+    "product_weight_g",
+    "product_length_cm",
+    "product_height_cm",
+    "product_width_cm",
+    "calendar_month",
+    "calendar_day",
+    "iso_weekday",
+    "total_items",
+    "total_orders",
+    "total_gross_amount",
+    "total_freight_value",
+    "delivered_late_ratio",
+    "lag_1_total_items",
+    "lag_1_total_orders",
+    "lag_1_total_gross_amount",
+    "trailing_7_sale_day_avg_items",
+    "trailing_7_sale_day_avg_revenue",
+    "product_key",
+    "product_category",
+    "weight_band"
+  ],
+  "sample_prediction_keys": [
+    {
+      "ml_sample_key": "00c1e6d55fe174bfbb179257255e49bb_20180528",
+      "product_key": "00c1e6d55fe174bfbb179257255e49bb",
+      "date_key": "20180528"
+    },
+    {
+      "ml_sample_key": "03e931f387c2dd5b006aecdb12515b2e_20180528",
+      "product_key": "03e931f387c2dd5b006aecdb12515b2e",
+      "date_key": "20180528"
+    },
+    {
+      "ml_sample_key": "07a949f27854f64558f8babcfec441cc_20180528",
+      "product_key": "07a949f27854f64558f8babcfec441cc",
+      "date_key": "20180528"
+    },
+    {
+      "ml_sample_key": "08c816d9a716567bf436173ef6f5f12e_20180528",
+      "product_key": "08c816d9a716567bf436173ef6f5f12e",
+      "date_key": "20180528"
+    },
+    {
+      "ml_sample_key": "09c3a2ea33f044aebffecd6681e00133_20180528",
+      "product_key": "09c3a2ea33f044aebffecd6681e00133",
+      "date_key": "20180528"
+    },
+    {
+      "ml_sample_key": "0a783d7ce18a37749c3a059cf829564b_20180528",
+      "product_key": "0a783d7ce18a37749c3a059cf829564b",
+      "date_key": "20180528"
+    },
+    {
+      "ml_sample_key": "0bcc3eeca39e1064258aa1e932269894_20180528",
+      "product_key": "0bcc3eeca39e1064258aa1e932269894",
+      "date_key": "20180528"
+    },
+    {
+      "ml_sample_key": "0c71252f37443403376d2008034a7240_20180528",
+      "product_key": "0c71252f37443403376d2008034a7240",
+      "date_key": "20180528"
+    },
+    {
+      "ml_sample_key": "0eb8e03d4ef83152c4642b606b5bbdec_20180528",
+      "product_key": "0eb8e03d4ef83152c4642b606b5bbdec",
+      "date_key": "20180528"
+    },
+    {
+      "ml_sample_key": "0ec5f6f08cf32bc916d0ae089696a44a_20180528",
+      "product_key": "0ec5f6f08cf32bc916d0ae089696a44a",
+      "date_key": "20180528"
+    }
+  ]
+}

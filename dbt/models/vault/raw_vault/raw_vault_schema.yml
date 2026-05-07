@@ -1,0 +1,150 @@
+# models/raw_vault/schema.yml
+version: 2
+
+models:
+  # ====================== HUBS  ======================
+  - name: hub_customer
+    columns:
+      - name: customer_hashkey
+        tests:
+          - unique
+          - not_null
+      - name: business_key
+        tests:
+          - unique
+          - not_null
+        
+  - name: hub_order
+    columns:
+      - name: order_hashkey
+        tests:
+          - unique
+          - not_null
+      - name: business_key
+        tests:
+          - unique
+          - not_null
+
+  - name: hub_product
+    columns:
+      - name: product_hashkey
+        tests:
+          - unique
+          - not_null
+      - name: business_key
+        tests:
+          - unique
+          - not_null
+
+  - name: hub_seller
+    columns:
+      - name: seller_hashkey
+        tests:
+          - unique
+          - not_null
+      - name: business_key
+        tests:
+          - unique
+          - not_null
+
+  - name: hub_review
+    columns:
+      - name: review_hashkey
+        tests:
+          - unique
+          - not_null
+      - name: business_key
+        tests:
+          - unique
+          - not_null  
+
+
+  # ====================== SATELLITES ======================
+  # - name: sat_customer
+  #   columns:
+  #     - name: customer_hashkey
+  #       tests:
+  #         - relationships:
+  #             to: ref('hub_customer')
+  #             field: customer_hashkey
+  #         - not_null
+
+
+
+  # ====================== LINKS ======================
+
+  - name: lnk_order_customer
+    columns:
+      - name: order_customer_hashkey
+        tests:
+          - unique
+          - not_null
+      - name: order_hashkey
+        tests:
+          - relationships:
+              to: ref('hub_order')
+              field: order_hashkey
+          - not_null
+      - name: customer_hashkey
+        tests:
+          - relationships:
+              to: ref('hub_customer')
+              field: customer_hashkey
+          - not_null
+
+  - name: lnk_order_product_seller
+    columns:
+      - name: order_product_seller_hashkey
+        tests:
+          - unique
+          - not_null
+      - name: order_hashkey
+        tests:
+          - relationships:
+              to: ref('hub_order')
+              field: order_hashkey
+          - not_null
+      - name: product_hashkey
+        tests:
+          - relationships:
+              to: ref('hub_product')
+              field: product_hashkey
+          - not_null
+      - name: seller_hashkey
+        tests:
+          - relationships:
+              to: ref('hub_seller')
+              field: seller_hashkey
+          - not_null
+
+  - name: lnk_order_payment
+    columns:
+      - name: order_payment_hashkey
+        tests:
+          - unique
+          - not_null
+      - name: order_hashkey
+        tests:
+          - relationships:
+              to: ref('hub_order')
+              field: order_hashkey
+          - not_null
+
+  - name: lnk_order_review
+    columns:
+      - name: order_review_hashkey
+        tests:
+          - unique
+          - not_null
+      - name: order_hashkey
+        tests:
+          - relationships:
+              to: ref('hub_order')
+              field: order_hashkey
+          - not_null
+      - name: review_hashkey
+        tests:
+          - relationships:
+              to: ref('hub_review')
+              field: review_hashkey
+          - not_null  
